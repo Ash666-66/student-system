@@ -1,0 +1,200 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}教师仪表板 - 学生选课系统{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-tachometer-alt"></i> 教师仪表板
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group mr-2">
+            <a href="{% url 'courses:enrollment_list' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-clipboard-list"></i> 选课管理
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            我的课程班次
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ my_classes.count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-chalkboard fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            学生总数
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_students }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            课程门数
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ my_courses.count }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-book fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-xl-3 col-md-6 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            个人信息
+                        </div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            <a href="{% url 'users:profile' %}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-user"></i> 查看
+                            </a>
+                        </div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-circle fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-lg-8">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                <h6 class="m-0 font-weight-bold text-primary">我的课程班次</h6>
+                <a href="{% url 'courses:class_list' %}" class="btn btn-sm btn-primary">
+                    查看全部
+                </a>
+            </div>
+            <div class="card-body">
+                {% if my_classes %}
+                    <div class="table-responsive">
+                        <table class="table table-bordered">
+                            <thead>
+                                <tr>
+                                    <th>班次代码</th>
+                                    <th>课程名称</th>
+                                    <th>教室</th>
+                                    <th>上课时间</th>
+                                    <th>学生数</th>
+                                    <th>操作</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for class in my_classes %}
+                                    <tr>
+                                        <td>{{ class.class_code }}</td>
+                                        <td>{{ class.course.course_name }}</td>
+                                        <td>{{ class.classroom }}</td>
+                                        <td>{{ class.schedule }}</td>
+                                        <td>{{ class.current_students }}/{{ class.max_students }}</td>
+                                        <td>
+                                            <a href="{% url 'courses:class_detail' class.pk %}" class="btn btn-sm btn-info">
+                                                <i class="fas fa-eye"></i> 详情
+                                            </a>
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% else %}
+                    <div class="text-center py-4">
+                        <i class="fas fa-inbox fa-3x text-gray-300 mb-3"></i>
+                        <p class="text-muted">暂无课程班次</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-lg-4">
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">快速操作</h6>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-12 text-center mb-3">
+                        <a href="{% url 'courses:enrollment_list' %}" class="btn btn-outline-primary btn-lg btn-block">
+                            <i class="fas fa-tasks"></i><br>选课管理
+                        </a>
+                    </div>
+                    <div class="col-12 text-center mb-3">
+                        <a href="{% url 'users:profile' %}" class="btn btn-outline-success btn-lg btn-block">
+                            <i class="fas fa-user-circle"></i><br>个人档案
+                        </a>
+                    </div>
+                    <div class="col-12 text-center mb-3">
+                        <a href="{% url 'courses:class_list' %}" class="btn btn-outline-info btn-lg btn-block">
+                            <i class="fas fa-list"></i><br>课程列表
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card shadow mb-4">
+            <div class="card-header py-3">
+                <h6 class="m-0 font-weight-bold text-primary">待办事项</h6>
+            </div>
+            <div class="card-body">
+                <div class="list-group list-group-flush">
+                    <a href="{% url 'courses:enrollment_list' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">选课审核</h6>
+                            <small class="text-muted">查看待审核申请</small>
+                        </div>
+                        <p class="mb-1">审核学生的选课申请</p>
+                    </a>
+                    <a href="{% url 'users:edit_profile' %}" class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">更新档案</h6>
+                            <small class="text-muted">个人信息维护</small>
+                        </div>
+                        <p class="mb-1">保持个人档案信息最新</p>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
