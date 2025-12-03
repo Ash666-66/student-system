@@ -49,7 +49,7 @@
 
                     <!-- 学分和学时 -->
                     <div class="row mt-3">
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="{{ form.credits.id_for_label }}" class="form-label">学分 *</label>
                             {{ form.credits }}
                             {% if form.credits.errors %}
@@ -57,13 +57,21 @@
                             {% endif %}
                             <div class="form-text">建议：1-6学分</div>
                         </div>
-                        <div class="col-md-6">
+                        <div class="col-md-4">
                             <label for="{{ form.hours.id_for_label }}" class="form-label">学时 *</label>
                             {{ form.hours }}
                             {% if form.hours.errors %}
                                 <div class="text-danger">{{ form.hours.errors }}</div>
                             {% endif %}
                             <div class="form-text">建议：16-96学时</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.max_students.id_for_label }}" class="form-label">最大选课人数 *</label>
+                            {{ form.max_students }}
+                            {% if form.max_students.errors %}
+                                <div class="text-danger">{{ form.max_students.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">建议：10-100人</div>
                         </div>
                     </div>
 
@@ -75,7 +83,7 @@
                             {% if form.academic_year.errors %}
                                 <div class="text-danger">{{ form.academic_year.errors }}</div>
                             {% endif %}
-                            <div class="form-text">例如：2024, 2025</div>
+                            <div class="form-text">例如：2025, 2026</div>
                         </div>
                         <div class="col-md-6">
                             <label for="{{ form.semester.id_for_label }}" class="form-label">学期</label>

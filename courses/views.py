@@ -126,7 +126,7 @@ class CourseCreateView(LoginRequiredMixin, IsAdminMixin, CreateView):
     model = Course
     form_class = CourseForm
     template_name = 'courses/course_form.html'
-    success_url = reverse_lazy('course_list')
+    success_url = reverse_lazy('courses:course_list')
 
     def form_valid(self, form):
         messages.success(self.request, '课程创建成功！')
@@ -137,7 +137,7 @@ class CourseUpdateView(LoginRequiredMixin, IsAdminMixin, UpdateView):
     model = Course
     form_class = CourseForm
     template_name = 'courses/course_form.html'
-    success_url = reverse_lazy('course_list')
+    success_url = reverse_lazy('courses:course_list')
 
     def form_valid(self, form):
         messages.success(self.request, '课程更新成功！')
@@ -147,7 +147,7 @@ class CourseUpdateView(LoginRequiredMixin, IsAdminMixin, UpdateView):
 class CourseDeleteView(LoginRequiredMixin, IsAdminMixin, DeleteView):
     model = Course
     template_name = 'courses/course_confirm_delete.html'
-    success_url = reverse_lazy('course_list')
+    success_url = reverse_lazy('courses:course_list')
 
     def delete(self, request, *args, **kwargs):
         messages.success(request, '课程删除成功！')
@@ -189,7 +189,7 @@ class CourseClassCreateView(LoginRequiredMixin, IsAdminMixin, CreateView):
     model = CourseClass
     form_class = CourseClassForm
     template_name = 'courses/class_form.html'
-    success_url = reverse_lazy('class_list')
+    success_url = reverse_lazy('courses:class_list')
 
     def form_valid(self, form):
         messages.success(self.request, '课程班次创建成功！')
@@ -200,7 +200,7 @@ class CourseClassUpdateView(LoginRequiredMixin, IsAdminMixin, UpdateView):
     model = CourseClass
     form_class = CourseClassForm
     template_name = 'courses/class_form.html'
-    success_url = reverse_lazy('class_list')
+    success_url = reverse_lazy('courses:class_list')
 
     def form_valid(self, form):
         messages.success(self.request, '课程班次更新成功！')
@@ -254,7 +254,11 @@ def enroll_course_view(request, class_id):
         return redirect('class_detail', pk=class_id)
 
     if request.method == 'POST':
-        form = StudentEnrollmentForm(request.POST, student=request.user)
+        # 确保POST数据中不会意外包含student字段
+        post_data = request.POST.copy()
+        post_data.pop('student', None)
+
+        form = StudentEnrollmentForm(post_data, student=request.user)
         if form.is_valid():
             with transaction.atomic():
                 enrollment = form.save(commit=False)
@@ -267,7 +271,7 @@ def enroll_course_view(request, class_id):
                 course_class.save()
 
                 messages.success(request, '选课申请已提交，请等待审核。')
-                return redirect('enrollment_list')
+                return redirect('courses:enrollment_list')
     else:
         form = StudentEnrollmentForm(student=request.user)
         form.fields['course_class'].initial = course_class.id
@@ -283,7 +287,7 @@ def approve_enrollment_view(request, enrollment_id):
     """审核选课申请"""
     if request.user.user_type not in ['admin', 'teacher']:
         messages.error(request, '您没有权限进行此操作。')
-        return redirect('enrollment_list')
+        return redirect('courses:enrollment_list')
 
     enrollment = get_object_or_404(Enrollment, id=enrollment_id)
     action = request.POST.get('action')
@@ -307,7 +311,7 @@ def approve_enrollment_view(request, enrollment_id):
         messages.success(request, '学生已退课。')
 
     enrollment.save()
-    return redirect('enrollment_list')
+    return redirect('courses:enrollment_list')
 
 
 @login_required
@@ -319,14 +323,14 @@ def grade_enrollment_view(request, enrollment_id):
     if (request.user.user_type == 'teacher' and enrollment.course_class.teacher != request.user) or \
        request.user.user_type == 'student':
         messages.error(request, '您没有权限进行此操作。')
-        return redirect('enrollment_list')
+        return redirect('courses:enrollment_list')
 
     if request.method == 'POST':
         form = GradeForm(request.POST, instance=enrollment)
         if form.is_valid():
             form.save()
             messages.success(request, '成绩录入成功。')
-            return redirect('enrollment_list')
+            return redirect('courses:enrollment_list')
     else:
         form = GradeForm(instance=enrollment)
 
@@ -376,7 +380,7 @@ class UserDetailView(LoginRequiredMixin, IsAdminMixin, DetailView):
 class CourseClassDeleteView(LoginRequiredMixin, IsAdminMixin, DeleteView):
     model = CourseClass
     template_name = 'courses/class_confirm_delete.html'
-    success_url = reverse_lazy('class_list')
+    success_url = reverse_lazy('courses:class_list')
 
     def delete(self, request, *args, **kwargs):
         messages.success(request, '课程班次删除成功！')
@@ -404,7 +408,7 @@ def class_unenroll_view(request, class_id):
             course_class.save()
         enrollment.save()
         messages.success(request, '退课申请已提交。')
-        return redirect('enrollment_list')
+        return redirect('courses:enrollment_list')
 
     return render(request, 'courses/class_unenroll_confirm.html', {
         'course_class': course_class,
@@ -419,7 +423,7 @@ def enrollment_cancel_view(request, enrollment_id):
 
     if enrollment.status != 'pending':
         messages.error(request, '只能取消待审核的选课申请。')
-        return redirect('enrollment_list')
+        return redirect('courses:enrollment_list')
 
     if request.method == 'POST':
         course_class = enrollment.course_class
@@ -428,7 +432,7 @@ def enrollment_cancel_view(request, enrollment_id):
             course_class.save()
         enrollment.delete()
         messages.success(request, '选课申请已取消。')
-        return redirect('enrollment_list')
+        return redirect('courses:enrollment_list')
 
     return render(request, 'courses/enrollment_cancel_confirm.html', {
         'enrollment': enrollment
@@ -463,5 +467,5 @@ class AnnouncementCreateView(LoginRequiredMixin, CreateView):
 
     def get_success_url(self):
         if self.object.course_class:
-            return reverse_lazy('class_detail', kwargs={'pk': self.object.course_class.id})
-        return reverse_lazy('course_list')
+            return reverse_lazy('courses:class_detail', kwargs={'pk': self.object.course_class.id})
+        return reverse_lazy('courses:course_list')

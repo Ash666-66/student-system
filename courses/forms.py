@@ -57,9 +57,16 @@ class StudentEnrollmentForm(forms.ModelForm):
             'remarks': forms.Textarea(attrs={'rows': 2, 'placeholder': '选课备注（可选）'}),
         }
 
-    def __init__(self, student, *args, **kwargs):
+    def __init__(self, *args, **kwargs):
+        # 从kwargs中获取student参数，避免重复
+        if 'student' in kwargs:
+            self.student = kwargs.pop('student')
+        else:
+            self.student = None
+
+        # 调用父类初始化，不传递student参数给ModelForm
         super().__init__(*args, **kwargs)
-        self.student = student
+
         # 只显示有可用名额的班次
         self.fields['course_class'].queryset = CourseClass.objects.filter(
             current_students__lt=models.F('max_students')
