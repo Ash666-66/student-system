@@ -107,7 +107,18 @@ class CourseDetailView(LoginRequiredMixin, DetailView):
 
     def get_context_data(self, **kwargs):
         context = super().get_context_data(**kwargs)
-        context['classes'] = self.object.classes.all().select_related('teacher')
+        classes = self.object.classes.all().select_related('teacher')
+        context['classes'] = classes
+
+        # 计算统计数据
+        total_capacity = sum(cls.max_students for cls in classes)
+        total_enrolled = sum(cls.current_students for cls in classes)
+        remaining_spots = max(0, total_capacity - total_enrolled)
+
+        context['total_capacity'] = total_capacity
+        context['total_enrolled'] = total_enrolled
+        context['remaining_spots'] = remaining_spots
+
         return context
 
 
@@ -360,3 +371,97 @@ class UserDetailView(LoginRequiredMixin, IsAdminMixin, DetailView):
         except:
             pass
         return context
+
+
+class CourseClassDeleteView(LoginRequiredMixin, IsAdminMixin, DeleteView):
+    model = CourseClass
+    template_name = 'courses/class_confirm_delete.html'
+    success_url = reverse_lazy('class_list')
+
+    def delete(self, request, *args, **kwargs):
+        messages.success(request, '课程班次删除成功！')
+        return super().delete(request, *args, **kwargs)
+
+
+@login_required
+def class_unenroll_view(request, class_id):
+    """学生申请退课"""
+    if request.user.user_type != 'student':
+        messages.error(request, '只有学生可以进行退课操作。')
+        return redirect('class_detail', pk=class_id)
+
+    course_class = get_object_or_404(CourseClass, id=class_id)
+    enrollment = get_object_or_404(Enrollment, student=request.user, course_class=course_class)
+
+    if enrollment.status != 'approved':
+        messages.error(request, '只能退已审核通过的选课。')
+        return redirect('class_detail', pk=class_id)
+
+    if request.method == 'POST':
+        enrollment.status = 'dropped'
+        if course_class.current_students > 0:
+            course_class.current_students -= 1
+            course_class.save()
+        enrollment.save()
+        messages.success(request, '退课申请已提交。')
+        return redirect('enrollment_list')
+
+    return render(request, 'courses/class_unenroll_confirm.html', {
+        'course_class': course_class,
+        'enrollment': enrollment
+    })
+
+
+@login_required
+def enrollment_cancel_view(request, enrollment_id):
+    """学生取消选课申请"""
+    enrollment = get_object_or_404(Enrollment, id=enrollment_id, student=request.user)
+
+    if enrollment.status != 'pending':
+        messages.error(request, '只能取消待审核的选课申请。')
+        return redirect('enrollment_list')
+
+    if request.method == 'POST':
+        course_class = enrollment.course_class
+        if course_class.current_students > 0:
+            course_class.current_students -= 1
+            course_class.save()
+        enrollment.delete()
+        messages.success(request, '选课申请已取消。')
+        return redirect('enrollment_list')
+
+    return render(request, 'courses/enrollment_cancel_confirm.html', {
+        'enrollment': enrollment
+    })
+
+
+class AnnouncementCreateView(LoginRequiredMixin, CreateView):
+    model = Announcement
+    form_class = AnnouncementForm
+    template_name = 'courses/announcement_form.html'
+
+    def get_form_kwargs(self):
+        kwargs = super().get_form_kwargs()
+        kwargs['user'] = self.request.user
+        return kwargs
+
+    def get_initial(self):
+        initial = super().get_initial()
+        class_id = self.request.GET.get('class')
+        if class_id:
+            try:
+                course_class = CourseClass.objects.get(id=class_id)
+                initial['course_class'] = course_class
+            except CourseClass.DoesNotExist:
+                pass
+        return initial
+
+    def form_valid(self, form):
+        form.instance.author = self.request.user
+        messages.success(self.request, '公告创建成功！')
+        return super().form_valid(form)
+
+    def get_success_url(self):
+        if self.object.course_class:
+            return reverse_lazy('class_detail', kwargs={'pk': self.object.course_class.id})
+        return reverse_lazy('course_list')

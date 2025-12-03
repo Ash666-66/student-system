@@ -57,17 +57,17 @@
                                 <td>{{ user.email }}</td>
                                 <td>
                                     {% if user.user_type == 'student' %}
-                                        {% try %}
+                                        {% if user.studentprofile %}
                                             {{ user.studentprofile.name }}
-                                        {% except %}
+                                        {% else %}
                                             <span class="text-muted">未完善</span>
-                                        {% endtry %}
+                                        {% endif %}
                                     {% elif user.user_type == 'teacher' %}
-                                        {% try %}
+                                        {% if user.teacherprofile %}
                                             {{ user.teacherprofile.name }}
-                                        {% except %}
+                                        {% else %}
                                             <span class="text-muted">未完善</span>
-                                        {% endtry %}
+                                        {% endif %}
                                     {% else %}
                                         {{ user.get_full_name }}
                                     {% endif %}

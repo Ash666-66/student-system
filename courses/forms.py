@@ -84,3 +84,12 @@ class AnnouncementForm(forms.ModelForm):
             'content': forms.Textarea(attrs={'rows': 4}),
             'course_class': forms.Select(attrs={'class': 'form-control'}),
         }
+
+    def __init__(self, user=None, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        if user:
+            # 教师只能选择自己的班次，管理员可以选择所有班次
+            if user.user_type == 'teacher':
+                self.fields['course_class'].queryset = CourseClass.objects.filter(teacher=user)
+            elif user.user_type == 'admin':
+                self.fields['course_class'].queryset = CourseClass.objects.all()

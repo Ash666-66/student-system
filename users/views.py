@@ -17,20 +17,20 @@ from .models import User, StudentProfile, TeacherProfile
 class CustomLoginView(LoginView):
     template_name = 'users/login.html'
     redirect_authenticated_user = True
-    success_url = reverse_lazy('dashboard')
+    success_url = reverse_lazy('courses:dashboard')
 
     def get_success_url(self):
         user = self.request.user
         if user.is_superuser or user.user_type == 'admin':
-            return reverse_lazy('admin_dashboard')
+            return reverse_lazy('courses:dashboard')
         elif user.user_type == 'teacher':
-            return reverse_lazy('teacher_dashboard')
+            return reverse_lazy('courses:dashboard')
         else:
-            return reverse_lazy('student_dashboard')
+            return reverse_lazy('courses:dashboard')
 
 
 class CustomLogoutView(LogoutView):
-    next_page = 'login'
+    next_page = 'users:login'
 
 
 def register_view(request):
@@ -63,7 +63,7 @@ def register_view(request):
     else:
         user_form = CustomUserCreationForm()
 
-    return render(request, 'users/register.html', {'user_form': user_form})
+    return render(request, 'users/register.html', {'form': user_form})
 
 
 def create_student_profile(request, user_id):
@@ -142,7 +142,7 @@ def profile_view(request):
         })
     except (StudentProfile.DoesNotExist, TeacherProfile.DoesNotExist):
         messages.error(request, '您的档案信息不完整，请联系管理员。')
-        return redirect('dashboard')
+        return redirect('courses:dashboard')
 
 
 @login_required

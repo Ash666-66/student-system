@@ -94,7 +94,7 @@ class Announcement(models.Model):
     title = models.CharField(max_length=200, verbose_name='公告标题')
     content = models.TextField(verbose_name='公告内容')
     author = models.ForeignKey(User, on_delete=models.CASCADE, limit_choices_to={'user_type__in': ['admin', 'teacher']}, verbose_name='发布者')
-    course_class = models.ForeignKey(CourseClass, on_delete=models.CASCADE, null=True, blank=True, verbose_name='相关课程班次')
+    course_class = models.ForeignKey(CourseClass, on_delete=models.CASCADE, null=True, blank=True, related_name='announcements', verbose_name='相关课程班次')
     is_active = models.BooleanField(default=True, verbose_name='是否启用')
     created_at = models.DateTimeField(auto_now_add=True, verbose_name='创建时间')
     updated_at = models.DateTimeField(auto_now=True, verbose_name='更新时间')

@@ -1,0 +1,126 @@
+{% extends 'base.html' %}
+
+{% block title %}编辑教师档案 - 学生选课系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-edit"></i> 编辑教师档案
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <!-- 基本信息 -->
+                    <h5 class="mb-3"><i class="fas fa-user"></i> 基本信息</h5>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="{{ user_form.username.id_for_label }}" class="form-label">用户名</label>
+                            {{ user_form.username }}
+                            {% if user_form.username.errors %}
+                                <div class="text-danger">{{ user_form.username.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ user_form.email.id_for_label }}" class="form-label">邮箱</label>
+                            {{ user_form.email }}
+                            {% if user_form.email.errors %}
+                                <div class="text-danger">{{ user_form.email.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 教师档案信息 -->
+                    <h5 class="mb-3"><i class="fas fa-chalkboard-teacher"></i> 教师档案信息</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="{{ profile_form.teacher_number.id_for_label }}" class="form-label">教师编号</label>
+                            {{ profile_form.teacher_number }}
+                            {% if profile_form.teacher_number.errors %}
+                                <div class="text-danger">{{ profile_form.teacher_number.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ profile_form.phone.id_for_label }}" class="form-label">联系电话</label>
+                            {{ profile_form.phone }}
+                            {% if profile_form.phone.errors %}
+                                <div class="text-danger">{{ profile_form.phone.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="{{ profile_form.department.id_for_label }}" class="form-label">院系</label>
+                            {{ profile_form.department }}
+                            {% if profile_form.department.errors %}
+                                <div class="text-danger">{{ profile_form.department.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ profile_form.title.id_for_label }}" class="form-label">职称</label>
+                            {{ profile_form.title }}
+                            {% if profile_form.title.errors %}
+                                <div class="text-danger">{{ profile_form.title.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'users:profile' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> 返回
+                        </a>
+                        <button type="submit" class="btn btn-success">
+                            <i class="fas fa-save"></i> 保存更改
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">账户信息</h5>
+            </div>
+            <div class="card-body">
+                <p><strong>用户名:</strong> {{ user.username }}</p>
+                <p><strong>用户类型:</strong> {{ user.get_user_type_display }}</p>
+                <p><strong>邮箱:</strong> {{ user.email }}</p>
+                <p><strong>账户创建时间:</strong> {{ user.date_joined|date:"Y-m-d H:i" }}</p>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header bg-warning text-white">
+                <h5 class="mb-0">快捷操作</h5>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'courses:course_list' %}" class="btn btn-outline-primary btn-sm mb-2 w-100">
+                    <i class="fas fa-book"></i> 我的课程
+                </a>
+                <a href="{% url 'courses:enrollment_list' %}" class="btn btn-outline-info btn-sm w-100">
+                    <i class="fas fa-users"></i> 选课管理
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 添加表单样式类
+    const formFields = document.querySelectorAll('input, select, textarea');
+    formFields.forEach(field => {
+        field.classList.add('form-control');
+    });
+});
+</script>
+{% endblock %}

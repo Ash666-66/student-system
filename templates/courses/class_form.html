@@ -1,0 +1,291 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if object %}
+        编辑课程班次 - {{ object.class_code }}
+    {% else %}
+        添加课程班次
+    {% endif %} - 学生选课系统
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header {% if object %}bg-warning text-dark{% else %}bg-success text-white{% endif %}">
+                <h4 class="mb-0">
+                    <i class="fas {% if object %}fa-edit{% else %}fa-plus{% endif %}"></i>
+                    {% if object %}
+                        编辑课程班次
+                    {% else %}
+                        添加课程班次
+                    {% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <!-- 基本信息 -->
+                    <h5 class="mb-3"><i class="fas fa-info-circle"></i> 基本信息</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="{{ form.class_code.id_for_label }}" class="form-label">班次代码 *</label>
+                            {{ form.class_code }}
+                            {% if form.class_code.errors %}
+                                <div class="text-danger">{{ form.class_code.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">例如：CS101-01, MATH201-02</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.course.id_for_label }}" class="form-label">所属课程 *</label>
+                            {{ form.course }}
+                            {% if form.course.errors %}
+                                <div class="text-danger">{{ form.course.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 授课信息 -->
+                    <h5 class="mb-3 mt-4"><i class="fas fa-chalkboard-teacher"></i> 授课信息</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="{{ form.teacher.id_for_label }}" class="form-label">授课教师 *</label>
+                            {{ form.teacher }}
+                            {% if form.teacher.errors %}
+                                <div class="text-danger">{{ form.teacher.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.classroom.id_for_label }}" class="form-label">教室</label>
+                            {{ form.classroom }}
+                            {% if form.classroom.errors %}
+                                <div class="text-danger">{{ form.classroom.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">例如：教学楼A-101, 实验楼B-205</div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <label for="{{ form.schedule.id_for_label }}" class="form-label">上课时间</label>
+                            {{ form.schedule }}
+                            {% if form.schedule.errors %}
+                                <div class="text-danger">{{ form.schedule.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">例如：周一/周三 8:00-10:00, 周二/周四 14:00-16:00</div>
+                        </div>
+                    </div>
+
+                    <!-- 容量设置 -->
+                    <h5 class="mb-3 mt-4"><i class="fas fa-users"></i> 容量设置</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="{{ form.max_students.id_for_label }}" class="form-label">最大学生数 *</label>
+                            {{ form.max_students }}
+                            {% if form.max_students.errors %}
+                                <div class="text-danger">{{ form.max_students.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">建议人数：20-80人</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.semester.id_for_label }}" class="form-label">学期</label>
+                            {{ form.semester }}
+                            {% if form.semester.errors %}
+                                <div class="text-danger">{{ form.semester.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">例如：2024春季, 2024秋季</div>
+                        </div>
+                    </div>
+
+                    <!-- 课程信息显示 -->
+                    <div class="alert alert-info mt-4">
+                        <h6><i class="fas fa-info-circle"></i> 关联课程信息</h6>
+                        <div id="courseInfo" class="text-muted">
+                            <p class="mb-0"><em>请先选择课程以查看详细信息</em></p>
+                        </div>
+                    </div>
+
+                    <!-- 班次设置须知 -->
+                    <div class="alert alert-warning mt-3">
+                        <h6><i class="fas fa-exclamation-triangle"></i> 班次设置须知</h6>
+                        <ul class="mb-0">
+                            <li>班次代码必须唯一，建议使用"课程代码-序号"格式</li>
+                            <li>最大学生数设置要考虑教室容量和教学效果</li>
+                            <li>上课时间要避免与教师其他课程冲突</li>
+                            <li>班次创建后，学生可以进行选课申请</li>
+                            <li>教师和管理员可以审核选课申请</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'courses:class_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> 返回班次列表
+                        </a>
+                        <div>
+                            <a href="{% url 'courses:class_list' %}" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-times"></i> 取消
+                            </a>
+                            <button type="submit" class="btn {% if object %}btn-warning{% else %}btn-success{% endif %}">
+                                <i class="fas fa-save"></i>
+                                {% if object %}
+                                    更新班次
+                                {% else %}
+                                    创建班次
+                                {% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 侧边栏信息 -->
+    <div class="col-md-4">
+        <!-- 统计信息 -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">班次统计</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>总班次数</span>
+                        <span class="badge bg-primary" id="totalClasses">0</span>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>可选课程</span>
+                        <span class="badge bg-success" id="availableClasses">0</span>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>已满课程</span>
+                        <span class="badge bg-danger" id="fullClasses">0</span>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>即将满员</span>
+                        <span class="badge bg-warning" id="almostFullClasses">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速操作 -->
+        <div class="card mt-3">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0">快速操作</h5>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'courses:course_list' %}" class="btn btn-outline-primary btn-sm mb-2 w-100">
+                    <i class="fas fa-book"></i> 课程管理
+                </a>
+                <a href="{% url 'courses:class_list' %}" class="btn btn-outline-info btn-sm mb-2 w-100">
+                    <i class="fas fa-chalkboard"></i> 班次列表
+                </a>
+                <a href="{% url 'courses:enrollment_list' %}" class="btn btn-outline-success btn-sm w-100">
+                    <i class="fas fa-clipboard-list"></i> 选课管理
+                </a>
+                {% if user.user_type == 'admin' %}
+                <a href="{% url 'courses:user_list' %}" class="btn btn-outline-warning btn-sm w-100">
+                    <i class="fas fa-users"></i> 用户管理
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 为表单字段添加样式
+    const formFields = document.querySelectorAll('input, select, textarea');
+    formFields.forEach(field => {
+        field.classList.add('form-control');
+    });
+
+    // 课程选择联动显示信息
+    const courseSelect = document.getElementById('{{ form.course.id_for_label }}');
+    const courseInfo = document.getElementById('courseInfo');
+
+    // 模拟课程数据
+    const courseData = {
+        '1': { name: '计算机科学导论', credits: 3, hours: 48, description: '计算机基础课程' },
+        '2': { name: '数据结构', credits: 4, hours: 64, description: '数据结构与算法基础' },
+        '3': { name: '高等数学', credits: 4, hours: 64, description: '微积分基础' }
+    };
+
+    if (courseSelect) {
+        courseSelect.addEventListener('change', function() {
+            const courseId = this.value;
+            if (courseId && courseData[courseId]) {
+                const course = courseData[courseId];
+                courseInfo.innerHTML = `
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>课程名称:</strong> ${course.name}</p>
+                            <p><strong>学分:</strong> ${course.credits}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>课时:</strong> ${course.hours}</p>
+                            <p><strong>描述:</strong> ${course.description}</p>
+                        </div>
+                    </div>
+                `;
+            } else {
+                courseInfo.innerHTML = '<p class="mb-0 text-muted"><em>请先选择课程以查看详细信息</em></p>';
+            }
+        });
+    }
+
+    // 加载统计数据
+    loadClassStatistics();
+
+    // 表单提交确认
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const classCode = document.getElementById('{{ form.class_code.id_for_label }}').value.trim();
+        const maxStudents = document.getElementById('{{ form.max_students.id_for_label }}').value;
+
+        if (!classCode) {
+            alert('请输入班次代码');
+            e.preventDefault();
+            return;
+        }
+
+        if (!maxStudents || maxStudents < 1) {
+            alert('请输入有效的最大学生数');
+            e.preventDefault();
+            return;
+        }
+
+        const confirmMessage = {% if object %}`确定要更新班次 ${classCode} 吗？`{% else %}`确定要创建新班次 ${classCode} 吗？`{% endif %};
+
+        if (!confirm(confirmMessage)) {
+            e.preventDefault();
+        } else {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+        }
+    });
+});
+
+function loadClassStatistics() {
+    // 模拟统计数据加载
+    setTimeout(() => {
+        document.getElementById('totalClasses').textContent = '12';
+        document.getElementById('availableClasses').textContent = '8';
+        document.getElementById('fullClasses').textContent = '2';
+        document.getElementById('almostFullClasses').textContent = '2';
+    }, 500);
+}
+</script>
+{% endblock %}
