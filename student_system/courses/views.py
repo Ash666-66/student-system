@@ -200,30 +200,59 @@ class CourseDeleteView(LoginRequiredMixin, IsAdminMixin, DeleteView):
     def delete(self, request, *args, **kwargs):
         course = self.get_object()
 
-        # 收集统计信息用于消息显示
+        # 安全检查：验证用户权限
+        if not (request.user.is_superuser or request.user.user_type == 'admin'):
+            messages.error(request, '您没有权限删除课程！')
+            return redirect('courses:course_detail', pk=course.pk)
+
+        # 收集统计信息用于消息显示和安全检查
         class_count = course.classes.count()
         total_enrolled = sum(cls.current_students for cls in course.classes.all())
 
+        # 安全检查：对于高风险操作的额外确认
+        if class_count > 15 or total_enrolled > 100:
+            # 检查是否进行了确认（通过POST参数）
+            high_risk_confirm = request.POST.get('high_risk_confirm')
+            if not high_risk_confirm:
+                messages.error(request, '对于大规模删除操作，需要额外的管理员确认！')
+                return redirect('courses:course_delete', pk=course.pk)
+
+        # 记录删除操作日志
+        from django.utils import timezone
+        delete_info = {
+            'course_code': course.course_code,
+            'course_name': course.course_name,
+            'deleted_by': request.user.username,
+            'deleted_at': timezone.now().isoformat(),
+            'class_count': class_count,
+            'enrolled_students': total_enrolled
+        }
+
         # 删除课程
-        result = super().delete(request, *args, **kwargs)
+        try:
+            result = super().delete(request, *args, **kwargs)
 
-        # 生成详细的成功消息
-        if class_count > 0 or total_enrolled > 0:
-            message_parts = [
-                f'课程 "{course.course_code} - {course.course_name}" 删除成功！'
-            ]
+            # 生成详细的成功消息
+            if class_count > 0 or total_enrolled > 0:
+                message_parts = [
+                    f'课程 "{course.course_code} - {course.course_name}" 删除成功！'
+                ]
 
-            if class_count > 0:
-                message_parts.append(f'已删除 {class_count} 个课程班次')
+                if class_count > 0:
+                    message_parts.append(f'已删除 {class_count} 个课程班次')
 
-            if total_enrolled > 0:
-                message_parts.append(f'已清除 {total_enrolled} 条选课记录')
+                if total_enrolled > 0:
+                    message_parts.append(f'已清除 {total_enrolled} 条选课记录')
 
-            messages.success(request, ' | '.join(message_parts))
-        else:
-            messages.success(request, f'课程 "{course.course_code} - {course.course_name}" 删除成功！')
+                messages.success(request, ' | '.join(message_parts))
+            else:
+                messages.success(request, f'课程 "{course.course_code} - {course.course_name}" 删除成功！')
 
-        return result
+            return result
+
+        except Exception as e:
+            messages.error(request, f'删除课程时发生错误：{str(e)}')
+            return redirect('courses:course_detail', pk=course.pk)
 
 
 # 课程班次管理视图

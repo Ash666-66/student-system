@@ -226,6 +226,31 @@
                         </div>
                     </div>
 
+                    <!-- 高风险操作额外确认 -->
+                    {% if risk_level == 'high' or class_count > 15 or total_enrolled > 100 %}
+                    <div class="alert alert-danger">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-shield-alt"></i>
+                            高风险操作额外确认
+                        </h6>
+                        <p class="mb-2">
+                            此删除操作将影响大量数据，需要额外确认：
+                        </p>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="high_risk_confirm" id="highRiskConfirm" required>
+                            <label class="form-check-label" for="highRiskConfirm">
+                                我是管理员，确认要进行此高风险删除操作，并已做好数据备份
+                            </label>
+                        </div>
+                        <small class="text-muted">
+                            建议在删除前：<br>
+                            • 导出相关学生成绩数据<br>
+                            • 保存课程相关文档<br>
+                            • 通知相关教师和学生
+                        </small>
+                    </div>
+                    {% endif %}
+
                     <!-- 操作按钮 -->
                     <div class="d-flex justify-content-between">
                         <a href="{% url 'courses:course_detail' object.id %}" class="btn btn-secondary">
