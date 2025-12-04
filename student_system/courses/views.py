@@ -81,7 +81,7 @@ class DashboardView(LoginRequiredMixin):
             active_users = total_students + total_teachers + total_admins
             user_type_percentage = round((active_users / total_users * 100), 1) if total_users > 0 else 0
             capacity_usage = round((total_enrolled / total_capacity * 100), 1) if total_capacity > 0 else 0
-            total_enrollment_records = total_enrollments + pending_enrollments + rejected_enrollments + dropped_enrollments
+            total_enrollment_records = total_enrolled + pending_enrollments + rejected_enrollments + dropped_enrollments
 
             return render(request, 'admin/dashboard.html', {
                 # 用户统计
