@@ -44,16 +44,40 @@ class DashboardView(LoginRequiredMixin):
                 'my_courses': Course.objects.filter(classes__teacher=user).distinct(),
             })
         else:
+            # 获取学生数据
+            my_enrollments = Enrollment.objects.filter(
+                student=user
+            ).select_related('course_class__course', 'course_class__teacher').order_by('-enroll_time')
+
+            approved_enrollments = my_enrollments.filter(status='approved')
+            pending_enrollments = my_enrollments.filter(status='pending')
+
+            # 计算统计数据
+            total_credits = sum(enrollment.course_class.course.credits for enrollment in approved_enrollments)
+            total_hours = sum(enrollment.course_class.course.hours for enrollment in approved_enrollments)
+            avg_grade = 0
+            grades = [e.grade for e in approved_enrollments if e.grade is not None]
+            if grades:
+                avg_grade = round(sum(grades) / len(grades), 1)
+
+            # 获取推荐课程（基于热门程度和剩余名额）
+            available_courses = CourseClass.objects.filter(
+                current_students__lt=models.F('max_students')
+            ).exclude(
+                enrollments__student=user
+            ).select_related('course', 'teacher').order_by('-current_students')[:10]
+
             return render(request, 'student/dashboard.html', {
                 'user': user,
-                'my_enrollments': Enrollment.objects.filter(
-                    student=user, status='approved'
-                ).select_related('course_class__course'),
-                'available_courses': CourseClass.objects.filter(
-                    current_students__lt=models.F('max_students')
-                ).exclude(
-                    enrollments__student=user
-                ).select_related('course', 'teacher')[:10],
+                'my_enrollments': approved_enrollments[:5],  # 只显示前5个
+                'pending_enrollments': pending_enrollments,
+                'available_courses': available_courses[:3],  # 推荐前3个
+                'total_credits': total_credits,
+                'total_hours': total_hours,
+                'avg_grade': avg_grade,
+                'approved_count': approved_enrollments.count(),
+                'pending_count': pending_enrollments.count(),
+                'grades_count': len(grades),
             })
 
 

@@ -3,229 +3,480 @@
 
 {% block title %}学生仪表板 - 学生选课系统{% endblock %}
 
+{% block extra_css %}
+<style>
+/* 自定义渐变和动画 */
+.gradient-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+}
+.gradient-success {
+    background: linear-gradient(135deg, #84fab0 0%, #8fd3f4 100%);
+}
+.gradient-info {
+    background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+}
+.gradient-warning {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+.gradient-danger {
+    background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+}
+
+.stat-card {
+    border: none;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+    position: relative;
+}
+
+.stat-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--gradient-start), var(--gradient-end));
+}
+
+.stat-card:nth-child(1)::before { --gradient-start: #667eea; --gradient-end: #764ba2; }
+.stat-card:nth-child(2)::before { --gradient-start: #84fab0; --gradient-end: #8fd3f4; }
+.stat-card:nth-child(3)::before { --gradient-start: #a8edea; --gradient-end: #fed6e3; }
+.stat-card:nth-child(4)::before { --gradient-start: #f093fb; --gradient-end: #f5576c; }
+
+.stat-icon {
+    width: 60px;
+    height: 60px;
+    border-radius: 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    color: white;
+    margin-bottom: 1rem;
+}
+
+.course-card {
+    border: none;
+    border-radius: 15px;
+    transition: all 0.3s ease;
+    overflow: hidden;
+}
+
+.course-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+}
+
+.quick-action-card {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 15px;
+    color: white;
+    transition: all 0.3s ease;
+    text-align: center;
+    padding: 2rem 1rem;
+}
+
+.quick-action-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.3);
+    color: white;
+    text-decoration: none;
+}
+
+.quick-action-card i {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.recommendation-card {
+    border-left: 4px solid #667eea;
+    transition: all 0.3s ease;
+}
+
+.recommendation-card:hover {
+    border-left-color: #764ba2;
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+.progress-ring {
+    transform: rotate(-90deg);
+}
+
+.progress-ring-circle {
+    transition: stroke-dashoffset 0.5s ease;
+}
+
+.fade-in {
+    animation: fadeIn 0.6s ease-in;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.pulse {
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.05); }
+    100% { transform: scale(1); }
+}
+
+/* 移动端优化 */
+@media (max-width: 768px) {
+    .stat-card {
+        margin-bottom: 1rem;
+    }
+
+    .quick-action-card {
+        margin-bottom: 1rem;
+        padding: 1.5rem 1rem;
+    }
+
+    .quick-action-card i {
+        font-size: 2rem;
+    }
+}
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-    <h1 class="h2">
-        <i class="fas fa-tachometer-alt"></i> 学生仪表板
-    </h1>
-    <div class="btn-toolbar mb-2 mb-md-0">
-        <div class="btn-group mr-2">
-            <a href="{% url 'courses:class_list' %}" class="btn btn-sm btn-outline-secondary">
-                <i class="fas fa-search"></i> 浏览课程
-            </a>
-            <a href="{% url 'users:profile' %}" class="btn btn-sm btn-outline-secondary">
-                <i class="fas fa-user"></i> 个人档案
-            </a>
+<div class="container-fluid fade-in">
+    <!-- 页面头部 -->
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-4 border-bottom">
+        <div>
+            <h1 class="h2 mb-0">
+                <i class="fas fa-graduation-cap text-primary"></i>
+                学生仪表板
+            </h1>
+            <p class="text-muted mb-0">欢迎回来，{{ user.username }}！</p>
         </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-primary shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
-                            已选课程
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ my_enrollments.count }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-book fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-success shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
-                            可选课程
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ available_courses|length }}</div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-plus-circle fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-info shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
-                            选课记录
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            <a href="{% url 'courses:enrollment_list' %}" class="btn btn-info btn-sm">
-                                <i class="fas fa-list"></i> 查看
-                            </a>
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-clipboard-list fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="col-xl-3 col-md-6 mb-4">
-        <div class="card border-left-warning shadow h-100 py-2">
-            <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
-                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
-                            个人档案
-                        </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800">
-                            <a href="{% url 'users:profile' %}" class="btn btn-warning btn-sm">
-                                <i class="fas fa-user"></i> 查看
-                            </a>
-                        </div>
-                    </div>
-                    <div class="col-auto">
-                        <i class="fas fa-user-graduate fa-2x text-gray-300"></i>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-
-<div class="row">
-    <div class="col-lg-8">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
-                <h6 class="m-0 font-weight-bold text-primary">我的课程</h6>
-                <a href="{% url 'courses:enrollment_list' %}" class="btn btn-sm btn-primary">
-                    查看全部
+        <div class="btn-toolbar">
+            <div class="btn-group">
+                <a href="{% url 'courses:class_list' %}" class="btn btn-primary">
+                    <i class="fas fa-search"></i> 浏览课程
+                </a>
+                <a href="{% url 'users:profile' %}" class="btn btn-outline-primary">
+                    <i class="fas fa-user"></i> 个人档案
                 </a>
             </div>
-            <div class="card-body">
-                {% if my_enrollments %}
-                    <div class="table-responsive">
-                        <table class="table table-bordered">
-                            <thead>
-                                <tr>
-                                    <th>课程名称</th>
-                                    <th>班次</th>
-                                    <th>教师</th>
-                                    <th>状态</th>
-                                    <th>成绩</th>
-                                    <th>操作</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for enrollment in my_enrollments %}
-                                    <tr>
-                                        <td>{{ enrollment.course_class.course.course_name }}</td>
-                                        <td>{{ enrollment.course_class.class_code }}</td>
-                                        <td>{{ enrollment.course_class.teacher.username }}</td>
-                                        <td>
+        </div>
+    </div>
+
+    <!-- 统计卡片区域 -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-2">已选课程</h6>
+                            <div class="d-flex align-items-baseline">
+                                <h3 class="mb-0 me-2">{{ approved_count }}</h3>
+                                {% if pending_count > 0 %}
+                                <span class="badge bg-warning ms-auto">+{{ pending_count }} 待审核</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="stat-icon gradient-primary">
+                            <i class="fas fa-book"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-2">总学分</h6>
+                            <div class="d-flex align-items-baseline">
+                                <h3 class="mb-0 me-2">{{ total_credits }}</h3>
+                                <small class="text-muted">学分</small>
+                            </div>
+                        </div>
+                        <div class="stat-icon gradient-success">
+                            <i class="fas fa-award"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-2">平均成绩</h6>
+                            <div class="d-flex align-items-baseline">
+                                <h3 class="mb-0 me-2">
+                                    {% if avg_grade > 0 %}
+                                        {{ avg_grade }}
+                                    {% else %}
+                                        --
+                                    {% endif %}
+                                </h3>
+                                <small class="text-muted">分</small>
+                            </div>
+                        </div>
+                        <div class="stat-icon gradient-info">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3 col-md-6 mb-3">
+            <div class="card stat-card h-100">
+                <div class="card-body">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-grow-1">
+                            <h6 class="text-muted mb-2">总学时</h6>
+                            <div class="d-flex align-items-baseline">
+                                <h3 class="mb-0 me-2">{{ total_hours }}</h3>
+                                <small class="text-muted">小时</small>
+                            </div>
+                        </div>
+                        <div class="stat-icon gradient-warning">
+                            <i class="fas fa-clock"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- 我的课程区域 -->
+        <div class="col-lg-8 mb-4">
+            <div class="card course-card shadow-sm h-100">
+                <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-book-open text-primary"></i>
+                            我的课程
+                        </h5>
+                        <a href="{% url 'courses:enrollment_list' %}" class="btn btn-sm btn-outline-primary">
+                            查看全部
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if my_enrollments %}
+                        <div class="row">
+                            {% for enrollment in my_enrollments %}
+                            <div class="col-md-6 mb-3">
+                                <div class="card border-0 bg-light recommendation-card">
+                                    <div class="card-body">
+                                        <div class="d-flex justify-content-between align-items-start mb-2">
+                                            <h6 class="card-title mb-0">{{ enrollment.course_class.course.course_name }}</h6>
                                             {% if enrollment.status == 'approved' %}
                                                 <span class="badge bg-success">已通过</span>
                                             {% elif enrollment.status == 'pending' %}
-                                                <span class="badge bg-warning">待审核</span>
-                                            {% elif enrollment.status == 'rejected' %}
-                                                <span class="badge bg-danger">已拒绝</span>
-                                            {% else %}
-                                                <span class="badge bg-secondary">已退课</span>
+                                                <span class="badge bg-warning pulse">待审核</span>
                                             {% endif %}
-                                        </td>
-                                        <td>
-                                            {% if enrollment.grade %}
-                                                {{ enrollment.grade }}
-                                            {% else %}
-                                                <span class="text-muted">未录入</span>
-                                            {% endif %}
-                                        </td>
-                                        <td>
-                                            <a href="{% url 'courses:class_detail' enrollment.course_class.pk %}" class="btn btn-sm btn-info">
+                                        </div>
+                                        <div class="mb-2">
+                                            <small class="text-muted">
+                                                <i class="fas fa-chalkboard me-1"></i>{{ enrollment.course_class.class_code }}
+                                                <span class="mx-2">|</span>
+                                                <i class="fas fa-user me-1"></i>{{ enrollment.course_class.teacher.username }}
+                                            </small>
+                                        </div>
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div>
+                                                {% if enrollment.grade %}
+                                                    <span class="badge bg-info">成绩: {{ enrollment.grade }}</span>
+                                                {% else %}
+                                                    <small class="text-muted">成绩未录入</small>
+                                                {% endif %}
+                                            </div>
+                                            <a href="{% url 'courses:class_detail' enrollment.course_class.pk %}"
+                                               class="btn btn-sm btn-outline-primary">
                                                 <i class="fas fa-eye"></i> 详情
                                             </a>
-                                        </td>
-                                    </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                {% else %}
-                    <div class="text-center py-4">
-                        <i class="fas fa-inbox fa-3x text-gray-300 mb-3"></i>
-                        <p class="text-muted">您还没有选择任何课程</p>
-                        <a href="{% url 'courses:class_list' %}" class="btn btn-primary">
-                            <i class="fas fa-search"></i> 浏览课程
-                        </a>
-                    </div>
-                {% endif %}
-            </div>
-        </div>
-    </div>
-
-    <div class="col-lg-4">
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">快速操作</h6>
-            </div>
-            <div class="card-body">
-                <div class="row">
-                    <div class="col-12 text-center mb-3">
-                        <a href="{% url 'courses:class_list' %}" class="btn btn-outline-primary btn-lg btn-block">
-                            <i class="fas fa-search"></i><br>浏览课程
-                        </a>
-                    </div>
-                    <div class="col-12 text-center mb-3">
-                        <a href="{% url 'courses:enrollment_list' %}" class="btn btn-outline-success btn-lg btn-block">
-                            <i class="fas fa-list"></i><br>选课记录
-                        </a>
-                    </div>
-                    <div class="col-12 text-center mb-3">
-                        <a href="{% url 'users:profile' %}" class="btn btn-outline-info btn-lg btn-block">
-                            <i class="fas fa-user-circle"></i><br>个人档案
-                        </a>
-                    </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="fas fa-inbox fa-4x text-muted mb-3"></i>
+                            <h5 class="text-muted mb-3">您还没有选择任何课程</h5>
+                            <p class="text-muted mb-4">快去浏览热门课程，开始您的学习之旅吧！</p>
+                            <a href="{% url 'courses:class_list' %}" class="btn btn-primary btn-lg">
+                                <i class="fas fa-rocket me-2"></i>开始选课
+                            </a>
+                        </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
 
-        <div class="card shadow mb-4">
-            <div class="card-header py-3">
-                <h6 class="m-0 font-weight-bold text-primary">推荐课程</h6>
+        <!-- 侧边栏区域 -->
+        <div class="col-lg-4 mb-4">
+            <!-- 快速操作 -->
+            <div class="card border-0 shadow-sm mb-4">
+                <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-bolt text-warning"></i>
+                        快速操作
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <div class="col-12">
+                            <a href="{% url 'courses:class_list' %}" class="quick-action-card">
+                                <i class="fas fa-search"></i>
+                                <h6 class="mb-1">浏览课程</h6>
+                                <small>发现新课程</small>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{% url 'courses:enrollment_list' %}" class="quick-action-card">
+                                <i class="fas fa-list-alt"></i>
+                                <h6 class="mb-1">选课记录</h6>
+                                <small>查看详情</small>
+                            </a>
+                        </div>
+                        <div class="col-md-6">
+                            <a href="{% url 'users:profile' %}" class="quick-action-card">
+                                <i class="fas fa-user-cog"></i>
+                                <h6 class="mb-1">个人设置</h6>
+                                <small>完善资料</small>
+                            </a>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                {% if available_courses %}
-                    {% for course_class in available_courses|slice:":3" %}
-                        <div class="card border-left-info shadow-sm mb-3">
-                            <div class="card-body">
-                                <h6 class="card-title">{{ course_class.course.course_name }}</h6>
-                                <p class="card-text">
-                                    <small class="text-muted">
-                                        班次: {{ course_class.class_code }}<br>
-                                        教师: {{ course_class.teacher.username }}<br>
-                                        剩余名额: {{ course_class.available_spots }}
-                                    </small>
-                                </p>
-                                <a href="{% url 'courses:enroll_course' course_class.id %}" class="btn btn-sm btn-primary">
+
+            <!-- 推荐课程 -->
+            {% if available_courses %}
+            <div class="card border-0 shadow-sm">
+                <div class="card-header bg-transparent border-0 pt-4 pb-0">
+                    <h5 class="mb-0">
+                        <i class="fas fa-star text-warning"></i>
+                        推荐课程
+                    </h5>
+                </div>
+                <div class="card-body">
+                    {% for course_class in available_courses %}
+                    <div class="card border-0 bg-light recommendation-card mb-3">
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between align-items-start mb-2">
+                                <h6 class="card-title mb-0">{{ course_class.course.course_name }}</h6>
+                                <small class="text-muted">{{ course_class.course.credits }}学分</small>
+                            </div>
+                            <p class="card-text small text-muted mb-2">
+                                <i class="fas fa-chalkboard me-1"></i>{{ course_class.class_code }}
+                                <span class="mx-2">|</span>
+                                <i class="fas fa-user me-1"></i>{{ course_class.teacher.username }}
+                            </p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <small class="text-success">
+                                    <i class="fas fa-users me-1"></i>
+                                    剩余 {{ course_class.available_spots }} 名额
+                                </small>
+                                <a href="{% url 'courses:enroll_course' course_class.id %}"
+                                   class="btn btn-sm btn-primary">
                                     选课
                                 </a>
                             </div>
                         </div>
+                    </div>
                     {% endfor %}
-                {% else %}
-                    <p class="text-muted">暂无可选课程</p>
-                {% endif %}
+                    <div class="text-center mt-3">
+                        <a href="{% url 'courses:class_list' %}" class="btn btn-outline-primary">
+                            查看更多课程
+                        </a>
+                    </div>
+                </div>
             </div>
+            {% endif %}
         </div>
     </div>
 </div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 添加页面加载动画
+    const cards = document.querySelectorAll('.stat-card, .course-card, .recommendation-card');
+    cards.forEach((card, index) => {
+        setTimeout(() => {
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(20px)';
+            card.style.transition = 'all 0.5s ease';
+
+            setTimeout(() => {
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+            }, 100);
+        }, index * 100);
+    });
+
+    // 为数字添加动画效果
+    const animateValue = (element, start, end, duration) => {
+        let startTimestamp = null;
+        const step = (timestamp) => {
+            if (!startTimestamp) startTimestamp = timestamp;
+            const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+            const value = Math.floor(progress * (end - start) + start);
+            element.textContent = value;
+            if (progress < 1) {
+                window.requestAnimationFrame(step);
+            }
+        };
+        window.requestAnimationFrame(step);
+    };
+
+    // 当统计数字可见时触发动画
+    const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+            if (entry.isIntersecting) {
+                const value = parseInt(entry.target.textContent);
+                if (!isNaN(value)) {
+                    animateValue(entry.target, 0, value, 1000);
+                }
+                observer.unobserve(entry.target);
+            }
+        });
+    });
+
+    document.querySelectorAll('.stat-card h3').forEach(el => {
+        observer.observe(el);
+    });
+
+    // 添加悬停音效（可选）
+    const cards = document.querySelectorAll('.stat-card, .quick-action-card, .recommendation-card');
+    cards.forEach(card => {
+        card.addEventListener('mouseenter', function() {
+            this.style.transform = 'translateY(-5px)';
+        });
+
+        card.addEventListener('mouseleave', function() {
+            this.style.transform = 'translateY(0)';
+        });
+    });
+});
+</script>
 {% endblock %}
