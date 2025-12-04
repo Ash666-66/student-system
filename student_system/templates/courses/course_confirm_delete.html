@@ -8,27 +8,166 @@
         <div class="card">
             <div class="card-header bg-danger text-white">
                 <h4 class="mb-0">
-                    <i class="fas fa-trash"></i>
+                    <i class="fas fa-exclamation-triangle"></i>
                     确认删除课程
                 </h4>
             </div>
             <div class="card-body">
-                <p>您确定要删除课程 <strong>{{ object.course_code }} - {{ object.course_name }}</strong> 吗？</p>
+                <!-- 严重警告 -->
+                <div class="alert alert-danger" role="alert">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        删除操作不可恢复！
+                    </h5>
+                    <p class="mb-0">
+                        您即将删除课程 <strong>{{ object.course_code }} - {{ object.course_name }}</strong>。
+                        此操作将同时删除与该课程相关的所有数据！
+                    </p>
+                    <ul class="mb-0 mt-2">
+                        <li>所有课程班次</li>
+                        <li>所有学生的选课记录</li>
+                        <li>所有成绩记录</li>
+                        <li>所有相关公告</li>
+                    </ul>
+                </div>
 
-                <form method="post">
+                <!-- 课程基本信息 -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="fas fa-info-circle"></i>
+                            待删除课程信息
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <p><strong>课程代码:</strong> {{ object.course_code }}</p>
+                                <p><strong>课程名称:</strong> {{ object.course_name }}</p>
+                                <p><strong>学分:</strong> {{ object.credits }} 学分</p>
+                                <p><strong>学时:</strong> {{ object.hours }} 学时</p>
+                            </div>
+                            <div class="col-md-6">
+                                <p><strong>学年:</strong> {{ object.academic_year|default:"未设定" }}</p>
+                                <p><strong>学期:</strong> {{ object.semester|default:"未设定" }}</p>
+                                <p><strong>开设班次:</strong> {{ object.classes.count }} 个</p>
+                                <p><strong>班级容量:</strong> {{ object.max_students }} 人</p>
+                            </div>
+                        </div>
+                        {% if object.description %}
+                        <div class="mt-3">
+                            <p class="mb-1"><strong>课程描述:</strong></p>
+                            <div class="bg-light p-2 rounded">
+                                <small>{{ object.description|linebreaks }}</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 确认表单 -->
+                <form method="post" id="deleteForm">
                     {% csrf_token %}
-                    <p class="text-danger">此操作不可恢复！</p>
+
+                    <!-- 确认复选框 -->
+                    <div class="alert alert-warning">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                            <label class="form-check-label" for="confirmDelete">
+                                我已确认要删除课程 <strong>"{{ object.course_name }}"</strong>，
+                                并理解此操作不可恢复
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 操作按钮 -->
                     <div class="d-flex justify-content-between">
                         <a href="{% url 'courses:course_detail' object.id %}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> 返回
+                            <i class="fas fa-arrow-left"></i> 返回课程详情
                         </a>
-                        <button type="submit" class="btn btn-danger">
-                            <i class="fas fa-trash"></i> 确认删除
-                        </button>
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary me-2" onclick="window.history.back()">
+                                <i class="fas fa-times"></i> 取消
+                            </button>
+                            <button type="submit" class="btn btn-danger" id="confirmBtn" disabled>
+                                <i class="fas fa-trash"></i> 确认删除
+                            </button>
+                        </div>
                     </div>
                 </form>
             </div>
         </div>
     </div>
+
+    <!-- 侧边栏提示 -->
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb"></i>
+                    操作前请注意
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-3">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-info-circle"></i>
+                        替代方案
+                    </h6>
+                    <p class="mb-2 small">
+                        如果只是想停止选课，可以考虑：
+                    </p>
+                    <ul class="small mb-0">
+                        <li>将课程状态设为不可选</li>
+                        <li>删除所有课程班次</li>
+                        <li>修改课程信息标注已停开</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-danger mb-0">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        删除后影响
+                    </h6>
+                    <ul class="small mb-0">
+                        <li>无法恢复课程数据</li>
+                        <li>影响学生选课记录</li>
+                        <li>可能影响学业统计</li>
+                        <li>教师失去课程访问权限</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmCheckbox = document.getElementById('confirmDelete');
+    const confirmButton = document.getElementById('confirmBtn');
+
+    // 复选框控制按钮状态
+    confirmCheckbox.addEventListener('change', function() {
+        confirmButton.disabled = !this.checked;
+    });
+
+    // 表单提交确认
+    document.getElementById('deleteForm').addEventListener('submit', function(e) {
+        const courseName = '{{ object.course_name }}';
+        const finalConfirm = confirm(
+            '最后确认：\n\n' +
+            '您确定要删除课程 "' + courseName + '" 吗？\n\n' +
+            '此操作将永久删除该课程及所有相关数据，且无法恢复！\n\n' +
+            '点击"确定"继续删除，点击"取消"返回。'
+        );
+
+        if (!finalConfirm) {
+            e.preventDefault();
+            return;
+        }
+    });
+});
+</script>
+{% endblock %}
 {% endblock %}
