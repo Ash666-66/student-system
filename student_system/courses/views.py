@@ -154,11 +154,25 @@ class CourseDeleteView(LoginRequiredMixin, IsAdminMixin, DeleteView):
         course = self.get_object()
 
         # 计算统计数据
-        class_count = course.classes.count()
-        total_enrolled = sum(cls.current_students for cls in course.classes.all())
+        classes = course.classes.all()
+        class_count = classes.count()
+        total_enrolled = sum(cls.current_students for cls in classes)
+        total_capacity = sum(cls.max_students for cls in classes)
 
-        context['class_count'] = class_count
-        context['total_enrolled'] = total_enrolled
+        # 计算平均班级大小
+        avg_class_size = total_enrolled / class_count if class_count > 0 else 0
+
+        # 计算选课率
+        enrollment_rate = (total_enrolled / total_capacity * 100) if total_capacity > 0 else 0
+
+        context.update({
+            'class_count': class_count,
+            'total_enrolled': total_enrolled,
+            'total_capacity': total_capacity,
+            'avg_class_size': round(avg_class_size, 1),
+            'enrollment_rate': round(enrollment_rate, 1),
+            'has_active_enrollments': classes.filter(current_students__gt=0).exists()
+        })
 
         return context
 

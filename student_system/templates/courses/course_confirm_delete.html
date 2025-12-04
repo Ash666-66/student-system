@@ -83,6 +83,23 @@
                                             <span class="badge {% if total_enrolled > 0 %}bg-warning{% else %}bg-secondary{% endif %}">{{ total_enrolled }} 人</span>
                                         </td>
                                     </tr>
+                                    {% if total_capacity > 0 %}
+                                    <tr>
+                                        <td class="text-muted"><strong>选课率:</strong></td>
+                                        <td>
+                                            <div class="progress" style="height: 20px; width: 100px;">
+                                                <div class="progress-bar {% if enrollment_rate > 80 %}bg-danger{% elif enrollment_rate > 60 %}bg-warning{% else %}bg-success{% endif %}"
+                                                     role="progressbar"
+                                                     style="width: {{ enrollment_rate }}%"
+                                                     aria-valuenow="{{ enrollment_rate }}"
+                                                     aria-valuemin="0"
+                                                     aria-valuemax="100">
+                                                    {{ enrollment_rate }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
                                 </table>
                             </div>
                         </div>
@@ -105,30 +122,70 @@
                         影响范围统计
                     </h6>
                     <div class="row">
-                        <div class="col-md-6">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-chalkboard text-warning me-2"></i>
+                        <div class="col-md-3 col-6">
+                            <div class="text-center">
+                                <i class="fas fa-chalkboard fa-2x text-warning mb-2"></i>
                                 <div>
                                     <strong>{{ class_count }}</strong>
-                                    <small class="text-muted">个课程班次</small>
+                                    <small class="d-block text-muted">课程班次</small>
                                 </div>
                             </div>
                         </div>
-                        <div class="col-md-6">
-                            <div class="d-flex align-items-center">
-                                <i class="fas fa-users text-warning me-2"></i>
+                        <div class="col-md-3 col-6">
+                            <div class="text-center">
+                                <i class="fas fa-users fa-2x text-info mb-2"></i>
                                 <div>
                                     <strong>{{ total_enrolled }}</strong>
-                                    <small class="text-muted">名学生的选课记录</small>
+                                    <small class="d-block text-muted">已选学生</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% if total_capacity > 0 %}
+                        <div class="col-md-3 col-6">
+                            <div class="text-center">
+                                <i class="fas fa-user-graduate fa-2x text-primary mb-2"></i>
+                                <div>
+                                    <strong>{{ total_capacity }}</strong>
+                                    <small class="d-block text-muted">总容量</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="text-center">
+                                <i class="fas fa-percentage fa-2x {% if enrollment_rate > 80 %}text-danger{% elif enrollment_rate > 60 %}text-warning{% else %}text-success{% endif %} mb-2"></i>
+                                <div>
+                                    <strong>{{ enrollment_rate }}%</strong>
+                                    <small class="d-block text-muted">选课率</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if total_enrolled > 0 %}
+                    <hr class="my-2">
+                    <div class="row">
+                        <div class="col-12">
+                            <p class="mb-2 small">
+                                <strong>重要提示：</strong>删除后，以下数据将被永久删除且无法恢复：
+                            </p>
+                            <div class="row text-center">
+                                <div class="col-md-4 col-12 mb-2">
+                                    <i class="fas fa-user-times text-danger"></i>
+                                    <span class="small">{{ total_enrolled }} 名学生选课记录</span>
+                                </div>
+                                {% if has_active_enrollments %}
+                                <div class="col-md-4 col-12 mb-2">
+                                    <i class="fas fa-graduation-cap text-danger"></i>
+                                    <span class="small">所有相关成绩记录</span>
+                                </div>
+                                {% endif %}
+                                <div class="col-md-4 col-12 mb-2">
+                                    <i class="fas fa-bullhorn text-danger"></i>
+                                    <span class="small">所有相关公告</span>
                                 </div>
                             </div>
                         </div>
                     </div>
-                    {% if total_enrolled > 0 %}
-                    <hr class="my-2">
-                    <p class="mb-0 small">
-                        <strong>重要提示：</strong>删除后，这 {{ total_enrolled }} 名学生的选课记录和成绩将被永久删除，且无法恢复！
-                    </p>
                     {% endif %}
                 </div>
                 {% endif %}
