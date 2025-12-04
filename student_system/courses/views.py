@@ -444,19 +444,19 @@ def enroll_course_view(request, class_id):
     """学生选课"""
     if request.user.user_type != 'student':
         messages.error(request, '只有学生可以进行选课操作。')
-        return redirect('class_list')
+        return redirect('courses:class_list')
 
     course_class = get_object_or_404(CourseClass, id=class_id)
 
     # 检查是否已选过该课程
     if Enrollment.objects.filter(student=request.user, course_class=course_class).exists():
         messages.error(request, '您已经选过这门课程了。')
-        return redirect('class_detail', pk=class_id)
+        return redirect('courses:class_detail', pk=class_id)
 
     # 检查名额
     if course_class.is_full:
         messages.error(request, '该课程班次已满，无法选课。')
-        return redirect('class_detail', pk=class_id)
+        return redirect('courses:class_detail', pk=class_id)
 
     if request.method == 'POST':
         # 确保POST数据中不会意外包含student字段
@@ -597,14 +597,14 @@ def class_unenroll_view(request, class_id):
     """学生申请退课"""
     if request.user.user_type != 'student':
         messages.error(request, '只有学生可以进行退课操作。')
-        return redirect('class_detail', pk=class_id)
+        return redirect('courses:class_detail', pk=class_id)
 
     course_class = get_object_or_404(CourseClass, id=class_id)
     enrollment = get_object_or_404(Enrollment, student=request.user, course_class=course_class)
 
     if enrollment.status != 'approved':
         messages.error(request, '只能退已审核通过的选课。')
-        return redirect('class_detail', pk=class_id)
+        return redirect('courses:class_detail', pk=class_id)
 
     if request.method == 'POST':
         enrollment.status = 'dropped'
