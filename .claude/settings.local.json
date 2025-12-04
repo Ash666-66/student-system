@@ -1,0 +1,29 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(django-admin startproject:*)",
+      "Bash(python manage.py startapp:*)",
+      "Bash(python manage.py:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git branch:*)",
+      "Bash(uv:*)",
+      "Bash(curl:*)",
+      "Bash(sh:*)",
+      "Bash(export:*)",
+      "Bash(python:*)",
+      "Bash(.venvScriptsactivate:*)",
+      "Bash(pip install:*)",
+      "Bash(dir:*)",
+      "Bash(\"student_env\\Scripts\\python.exe\":*)",
+      "Bash(student_envScriptsactivate)",
+      "Bash(\"student_env\\Scripts\\pip.exe\" install:*)",
+      "Bash(findstr:*)",
+      "Bash(tasklist:*)",
+      "Bash(taskkill:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
