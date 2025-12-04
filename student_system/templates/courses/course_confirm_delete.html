@@ -114,6 +114,27 @@
                     </div>
                 </div>
 
+                <!-- 风险评估 -->
+                <div class="alert alert-{{ risk_color }} d-flex align-items-center" role="alert">
+                    <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                    <div>
+                        <h6 class="alert-heading mb-1">风险评估</h6>
+                        <p class="mb-0">
+                            <strong>{{ risk_message }}</strong>
+                            <br>
+                            <small>
+                                {% if risk_level == 'high' %}
+                                此删除操作将影响大量数据，建议先备份重要信息
+                                {% elif risk_level == 'medium' %}
+                                请仔细检查影响范围，确保没有遗漏重要数据
+                                {% else %}
+                                删除影响相对较小，但仍需谨慎操作
+                                {% endif %}
+                            </small>
+                        </p>
+                    </div>
+                </div>
+
                 <!-- 影响范围统计 -->
                 {% if class_count > 0 or total_enrolled > 0 %}
                 <div class="alert alert-warning" role="alert">

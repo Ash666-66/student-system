@@ -165,13 +165,34 @@ class CourseDeleteView(LoginRequiredMixin, IsAdminMixin, DeleteView):
         # 计算选课率
         enrollment_rate = (total_enrolled / total_capacity * 100) if total_capacity > 0 else 0
 
+        # 风险评估
+        risk_level = 'low'
+        risk_message = '低风险'
+        risk_color = 'success'
+
+        if class_count > 10:
+            risk_level = 'high'
+            risk_message = '高风险：大量班次将被删除'
+            risk_color = 'danger'
+        elif class_count > 5 or total_enrolled > 50:
+            risk_level = 'medium'
+            risk_message = '中等风险：影响较大'
+            risk_color = 'warning'
+        elif total_enrolled > 0:
+            risk_level = 'medium'
+            risk_message = '中等风险：有学生选课记录'
+            risk_color = 'warning'
+
         context.update({
             'class_count': class_count,
             'total_enrolled': total_enrolled,
             'total_capacity': total_capacity,
             'avg_class_size': round(avg_class_size, 1),
             'enrollment_rate': round(enrollment_rate, 1),
-            'has_active_enrollments': classes.filter(current_students__gt=0).exists()
+            'has_active_enrollments': classes.filter(current_students__gt=0).exists(),
+            'risk_level': risk_level,
+            'risk_message': risk_message,
+            'risk_color': risk_color
         })
 
         return context
