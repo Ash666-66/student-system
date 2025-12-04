@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+
+{% block title %}用户详情 - {{ user_obj.username }} - 学生选课系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-user"></i> 用户详情
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- 基本信息 -->
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <h6><i class="fas fa-id-card"></i> 基本信息</h6>
+                        <table class="table table-sm">
+                            <tr>
+                                <td><strong>用户名:</strong></td>
+                                <td>{{ user_obj.username }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>姓名:</strong></td>
+                                <td>{{ user_obj.first_name }} {{ user_obj.last_name }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>邮箱:</strong></td>
+                                <td>{{ user_obj.email }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>手机号:</strong></td>
+                                <td>{{ user_obj.phone|default:"未填写" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>用户类型:</strong></td>
+                                <td>
+                                    {% if user_obj.user_type == 'admin' %}
+                                        <span class="badge bg-danger">管理员</span>
+                                    {% elif user_obj.user_type == 'teacher' %}
+                                        <span class="badge bg-warning text-dark">教师</span>
+                                    {% elif user_obj.user_type == 'student' %}
+                                        <span class="badge bg-primary">学生</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>注册时间:</strong></td>
+                                <td>{{ user_obj.date_joined|date:"Y-m-d H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>最后登录:</strong></td>
+                                <td>{{ user_obj.last_login|date:"Y-m-d H:i"|default:"从未登录" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+
+                    <!-- 详细档案信息 -->
+                    <div class="col-md-6">
+                        {% if profile %}
+                            {% if user_obj.user_type == 'student' %}
+                                <h6><i class="fas fa-graduation-cap"></i> 学生档案</h6>
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td><strong>学号:</strong></td>
+                                        <td>{{ profile.student_id }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>姓名:</strong></td>
+                                        <td>{{ profile.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>性别:</strong></td>
+                                        <td>{{ profile.get_gender_display }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>出生日期:</strong></td>
+                                        <td>{{ profile.birth_date|date:"Y-m-d"|default:"未填写" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>年级:</strong></td>
+                                        <td>{{ profile.grade|default:"未填写" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>专业:</strong></td>
+                                        <td>{{ profile.major|default:"未填写" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>班级:</strong></td>
+                                        <td>{{ profile.class_name|default:"未填写" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>入学时间:</strong></td>
+                                        <td>{{ profile.enrollment_date|date:"Y-m-d"|default:"未填写" }}</td>
+                                    </tr>
+                                </table>
+
+                                <!-- 选课信息 -->
+                                {% if enrollments %}
+                                    <h6 class="mt-3"><i class="fas fa-book"></i> 选课信息</h6>
+                                    <div class="table-responsive">
+                                        <table class="table table-sm">
+                                            <thead>
+                                                <tr>
+                                                    <th>课程</th>
+                                                    <th>班次</th>
+                                                    <th>状态</th>
+                                                    <th>成绩</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for enrollment in enrollments %}
+                                                <tr>
+                                                    <td>{{ enrollment.course_class.course.course_name }}</td>
+                                                    <td>{{ enrollment.course_class.class_code }}</td>
+                                                    <td>
+                                                        {% if enrollment.status == 'approved' %}
+                                                            <span class="badge bg-success">已通过</span>
+                                                        {% elif enrollment.status == 'pending' %}
+                                                            <span class="badge bg-warning text-dark">待审核</span>
+                                                        {% elif enrollment.status == 'rejected' %}
+                                                            <span class="badge bg-danger">已拒绝</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>
+                                                        {% if enrollment.grade %}
+                                                            {{ enrollment.grade }}
+                                                        {% else %}
+                                                            <span class="text-muted">未录入</span>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                {% endif %}
+
+                            {% elif user_obj.user_type == 'teacher' %}
+                                <h6><i class="fas fa-chalkboard-teacher"></i> 教师档案</h6>
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td><strong>教师编号:</strong></td>
+                                        <td>{{ profile.teacher_id }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>姓名:</strong></td>
+                                        <td>{{ profile.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>性别:</strong></td>
+                                        <td>{{ profile.get_gender_display }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>出生日期:</strong></td>
+                                        <td>{{ profile.birth_date|date:"Y-m-d"|default:"未填写" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>部门:</strong></td>
+                                        <td>{{ profile.department|default:"未填写" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>职称:</strong></td>
+                                        <td>{{ profile.title|default:"未填写" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>入职时间:</strong></td>
+                                        <td>{{ profile.hire_date|date:"Y-m-d"|default:"未填写" }}</td>
+                                    </tr>
+                                </table>
+                            {% endif %}
+                        {% else %}
+                            <div class="alert alert-warning">
+                                <i class="fas fa-exclamation-triangle"></i> 该用户尚未完善档案信息
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 操作按钮 -->
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'courses:user_list' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> 返回用户列表
+                    </a>
+                    <div>
+                        {% if user.user_type == 'admin' %}
+                            <a href="#" class="btn btn-warning">
+                                <i class="fas fa-edit"></i> 编辑用户
+                            </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 侧边栏 -->
+    <div class="col-md-4">
+        <!-- 用户统计 -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">用户统计</h5>
+            </div>
+            <div class="card-body">
+                {% if user_obj.user_type == 'student' %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>选课数量</span>
+                            <span class="badge bg-info">{{ enrollments|length }}</span>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>已通过课程</span>
+                            <span class="badge bg-success">{{ enrollments|length }}</span>
+                        </div>
+                    </div>
+                {% elif user_obj.user_type == 'teacher' %}
+                    <div class="mb-3">
+                        <div class="d-flex justify-content-between">
+                            <span>授课班次</span>
+                            <span class="badge bg-info">0</span>
+                        </div>
+                    </div>
+                {% endif %}
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>账户状态</span>
+                        <span class="badge bg-success">
+                            {% if user_obj.is_active %}正常{% else %}禁用{% endif %}
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速操作 -->
+        <div class="card mt-3">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">快速操作</h5>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'courses:user_list' %}" class="btn btn-outline-primary btn-sm mb-2 w-100">
+                    <i class="fas fa-users"></i> 用户列表
+                </a>
+                {% if user.user_type == 'admin' %}
+                    <a href="{% url 'courses:dashboard' %}" class="btn btn-outline-info btn-sm mb-2 w-100">
+                        <i class="fas fa-tachometer-alt"></i> 系统仪表板
+                    </a>
+                    <a href="{% url 'courses:course_list' %}" class="btn btn-outline-success btn-sm w-100">
+                        <i class="fas fa-book"></i> 课程管理
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 可以在这里添加交互功能
+    console.log('用户详情页面加载完成');
+});
+</script>
+{% endblock %}

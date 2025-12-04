@@ -1,0 +1,367 @@
+{% extends 'base.html' %}
+
+{% block title %}录入成绩 - {{ enrollment.student.username }} - 学生选课系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h4 class="mb-0">
+                    <i class="fas fa-edit"></i> 录入成绩
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- 学生和课程信息 -->
+                <div class="alert alert-info mb-4">
+                    <h5><i class="fas fa-info-circle"></i> 选课信息</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>学生:</strong> {{ enrollment.student.username }}</p>
+                            {% if enrollment.student.studentprofile %}
+                            <p><strong>学号:</strong> {{ enrollment.student.studentprofile.student_number }}</p>
+                            {% endif %}
+                            <p><strong>选课时间:</strong> {{ enrollment.enroll_time|date:"Y-m-d H:i" }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>课程:</strong> {{ enrollment.course_class.course.course_name }}</p>
+                            <p><strong>班次:</strong> {{ enrollment.course_class.class_code }}</p>
+                            <p><strong>审核通过时间:</strong> {{ enrollment.approve_time|date:"Y-m-d H:i"|default:"未通过" }}</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 成绩录入表单 -->
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.grade.id_for_label }}" class="form-label">成绩</label>
+                            {{ form.grade }}
+                            {% if form.grade.errors %}
+                                <div class="text-danger">{{ form.grade.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="fas fa-info-circle"></i>
+                                请输入0-100之间的数字成绩，或使用等级制（A、B、C、D、F）
+                            </div>
+                        </div>
+                        {% if form.semester %}
+                        <div class="col-md-6">
+                            <label for="{{ form.semester.id_for_label }}" class="form-label">学期</label>
+                            {{ form.semester }}
+                            {% if form.semester.errors %}
+                                <div class="text-danger">{{ form.semester.errors }}</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    {% if form.comments %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="{{ form.comments.id_for_label }}" class="form-label">评语</label>
+                            {{ form.comments }}
+                            {% if form.comments.errors %}
+                                <div class="text-danger">{{ form.comments.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">
+                                <i class="fas fa-comment"></i>
+                                可选：填写对学生学习表现的评价和建议
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 成绩录入须知 -->
+                    <div class="alert alert-warning mb-4">
+                        <h6><i class="fas fa-exclamation-triangle"></i> 成绩录入须知</h6>
+                        <ul class="mb-0">
+                            <li>请确保成绩的准确性和公平性</li>
+                            <li>成绩一旦录入，学生将可以立即查看</li>
+                            <li>如需修改成绩，请联系系统管理员</li>
+                            <li>建议在期末考试结束后一周内完成成绩录入</li>
+                            <li>成绩录入后，系统将自动计算GPA和学分统计</li>
+                        </ul>
+                    </div>
+
+                    <!-- 历史成绩记录 -->
+                    {% if enrollment.grade_history %}
+                    <div class="alert alert-light mb-4">
+                        <h6><i class="fas fa-history"></i> 成绩修改记录</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>修改时间</th>
+                                        <th>原成绩</th>
+                                        <th>新成绩</th>
+                                        <th>修改人</th>
+                                        <th>原因</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for record in enrollment.grade_history %}
+                                    <tr>
+                                        <td>{{ record.modified_at|date:"Y-m-d H:i" }}</td>
+                                        <td>{{ record.old_grade|default:"-" }}</td>
+                                        <td>{{ record.new_grade }}</td>
+                                        <td>{{ record.modified_by.username }}</td>
+                                        <td>{{ record.reason|default:"-" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'courses:class_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> 返回选课列表
+                        </a>
+                        <div>
+                            <button type="button" class="btn btn-outline-primary me-2" onclick="calculateGPA()">
+                                <i class="fas fa-calculator"></i> 计算GPA
+                            </button>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-save"></i> 保存成绩
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- 成绩标准 -->
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0">成绩标准</h5>
+            </div>
+            <div class="card-body">
+                <h6>百分制成绩</h6>
+                <div class="list-group list-group-flush mb-3">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>优秀</span>
+                        <span class="badge bg-success">90-100</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>良好</span>
+                        <span class="badge bg-primary">80-89</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>中等</span>
+                        <span class="badge bg-info">70-79</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>及格</span>
+                        <span class="badge bg-warning">60-69</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>不及格</span>
+                        <span class="badge bg-danger">0-59</span>
+                    </div>
+                </div>
+
+                <h6>等级制成绩</h6>
+                <div class="list-group list-group-flush">
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>A</span>
+                        <span class="badge bg-success">优秀</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>B</span>
+                        <span class="badge bg-primary">良好</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>C</span>
+                        <span class="badge bg-info">中等</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>D</span>
+                        <span class="badge bg-warning">及格</span>
+                    </div>
+                    <div class="list-group-item d-flex justify-content-between align-items-center">
+                        <span>F</span>
+                        <span class="badge bg-danger">不及格</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 统计信息 -->
+        <div class="card mt-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">班级统计</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>已录入成绩</span>
+                        <span class="badge bg-primary" id="gradedCount">0</span>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>未录入成绩</span>
+                        <span class="badge bg-warning" id="ungradedCount">0</span>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>平均分</span>
+                        <span class="badge bg-info" id="averageGrade">-</span>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>及格率</span>
+                        <span class="badge bg-success" id="passRate">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- GPA计算结果模态框 -->
+<div class="modal fade" id="gpaModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">GPA计算结果</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div id="gpaResult">
+                    <!-- 计算结果将显示在这里 -->
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 为表单字段添加样式
+    const formFields = document.querySelectorAll('input, select, textarea');
+    formFields.forEach(field => {
+        field.classList.add('form-control');
+    });
+
+    // 模拟加载班级统计数据
+    loadClassStatistics();
+
+    // 添加表单提交确认
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const gradeInput = document.getElementById('{{ form.grade.id_for_label }}');
+        const grade = gradeInput.value.trim();
+
+        if (!grade) {
+            alert('请输入成绩');
+            e.preventDefault();
+            return;
+        }
+
+        const confirmSubmit = confirm(`确定要录入成绩 "${grade}" 吗？`);
+        if (!confirmSubmit) {
+            e.preventDefault();
+        } else {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 保存中...';
+        }
+    });
+
+    // 实时验证成绩输入
+    const gradeInput = document.getElementById('{{ form.grade.id_for_label }}');
+    gradeInput.addEventListener('input', function() {
+        const value = this.value.trim().toUpperCase();
+
+        // 验证成绩格式
+        if (/^\d+$/.test(value)) {
+            const num = parseInt(value);
+            if (num >= 0 && num <= 100) {
+                this.classList.remove('is-invalid');
+                this.classList.add('is-valid');
+            } else {
+                this.classList.remove('is-valid');
+                this.classList.add('is-invalid');
+            }
+        } else if (/^[ABCDF]$/.test(value)) {
+            this.classList.remove('is-invalid');
+            this.classList.add('is-valid');
+        } else if (value === '') {
+            this.classList.remove('is-valid', 'is-invalid');
+        } else {
+            this.classList.remove('is-valid');
+            this.classList.add('is-invalid');
+        }
+    });
+});
+
+function loadClassStatistics() {
+    // 模拟从服务器加载班级统计数据
+    setTimeout(() => {
+        document.getElementById('gradedCount').textContent = '15';
+        document.getElementById('ungradedCount').textContent = '8';
+        document.getElementById('averageGrade').textContent = '82.5';
+        document.getElementById('passRate').textContent = '87.5%';
+    }, 500);
+}
+
+function calculateGPA() {
+    const gradeInput = document.getElementById('{{ form.grade.id_for_label }}');
+    const grade = gradeInput.value.trim().toUpperCase();
+    let gpa = 0;
+    let gradeText = '';
+
+    if (/^\d+$/.test(grade)) {
+        const num = parseInt(grade);
+        if (num >= 90) { gpa = 4.0; gradeText = 'A (优秀)'; }
+        else if (num >= 80) { gpa = 3.0; gradeText = 'B (良好)'; }
+        else if (num >= 70) { gpa = 2.0; gradeText = 'C (中等)'; }
+        else if (num >= 60) { gpa = 1.0; gradeText = 'D (及格)'; }
+        else { gpa = 0.0; gradeText = 'F (不及格)'; }
+    } else if (/^[ABCDF]$/.test(grade)) {
+        switch(grade) {
+            case 'A': gpa = 4.0; gradeText = 'A (优秀)'; break;
+            case 'B': gpa = 3.0; gradeText = 'B (良好)'; break;
+            case 'C': gpa = 2.0; gradeText = 'C (中等)'; break;
+            case 'D': gpa = 1.0; gradeText = 'D (及格)'; break;
+            case 'F': gpa = 0.0; gradeText = 'F (不及格)'; break;
+        }
+    } else {
+        alert('请输入有效的成绩');
+        return;
+    }
+
+    const modal = new bootstrap.Modal(document.getElementById('gpaModal'));
+    const result = document.getElementById('gpaResult');
+    result.innerHTML = `
+        <div class="text-center">
+            <h3 class="text-primary mb-3">GPA: ${gpa.toFixed(2)}</h3>
+            <p class="lead">成绩: ${gradeInput.value} → ${gradeText}</p>
+            <div class="alert alert-info">
+                <small>GPA计算标准：<br>
+                A (90-100) = 4.0<br>
+                B (80-89) = 3.0<br>
+                C (70-79) = 2.0<br>
+                D (60-69) = 1.0<br>
+                F (0-59) = 0.0</small>
+            </div>
+        </div>
+    `;
+    modal.show();
+}
+</script>
+{% endblock %}

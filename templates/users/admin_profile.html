@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+
+{% block title %}管理员档案 - {{ user.username }} - 学生选课系统{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-dark text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-shield"></i> 管理员档案信息
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="row mb-4">
+                    <div class="col-md-4 text-center">
+                        <div class="mb-3">
+                            <i class="fas fa-user-cog fa-6x text-dark"></i>
+                        </div>
+                        <h5>{{ user.username }}</h5>
+                        <span class="badge bg-warning">{{ user.get_user_type_display }}</span>
+                        {% if user.is_superuser %}
+                            <span class="badge bg-danger ms-1">超级用户</span>
+                        {% endif %}
+                    </div>
+                    <div class="col-md-8">
+                        <h5 class="mb-3"><i class="fas fa-info-circle"></i> 基本信息</h5>
+                        <table class="table table-borderless">
+                            <tr>
+                                <td><strong>用户名:</strong></td>
+                                <td>{{ user.username }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>邮箱:</strong></td>
+                                <td>{{ user.email }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>用户类型:</strong></td>
+                                <td>{{ user.get_user_type_display }}</td>
+                            </tr>
+                            {% if user.is_superuser %}
+                            <tr>
+                                <td><strong>权限级别:</strong></td>
+                                <td><span class="badge bg-danger">超级管理员</span></td>
+                            </tr>
+                            {% endif %}
+                            <tr>
+                                <td><strong>账户状态:</strong></td>
+                                <td>
+                                    {% if user.is_active %}
+                                        <span class="badge bg-success">活跃</span>
+                                    {% else %}
+                                        <span class="badge bg-secondary">已禁用</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            <tr>
+                                <td><strong>注册时间:</strong></td>
+                                <td>{{ user.date_joined|date:"Y-m-d H:i" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>最后登录:</strong></td>
+                                <td>{{ user.last_login|date:"Y-m-d H:i"|default:"从未登录" }}</td>
+                            </tr>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 系统权限说明 -->
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading"><i class="fas fa-exclamation-triangle"></i> 系统权限说明</h6>
+                    <p class="mb-2">作为系统管理员，您拥有以下权限：</p>
+                    <ul class="mb-0">
+                        <li>管理所有用户账户（创建、编辑、删除）</li>
+                        <li>管理所有课程和班次信息</li>
+                        <li>审核和批准选课申请</li>
+                        <li>发布系统公告和通知</li>
+                        <li>查看系统统计和报表</li>
+                        {% if user.is_superuser %}
+                        <li>访问系统设置和配置</li>
+                        {% endif %}
+                    </ul>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{% url 'courses:dashboard' %}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> 返回仪表板
+                    </a>
+                    <a href="{% url 'users:edit_profile' %}" class="btn btn-dark">
+                        <i class="fas fa-edit"></i> 编辑档案
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h5 class="mb-0">管理功能</h5>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'courses:user_list' %}" class="btn btn-outline-primary btn-sm mb-2 w-100">
+                    <i class="fas fa-users"></i> 用户管理
+                </a>
+                <a href="{% url 'courses:course_list' %}" class="btn btn-outline-success btn-sm mb-2 w-100">
+                    <i class="fas fa-book"></i> 课程管理
+                </a>
+                <a href="{% url 'courses:enrollment_list' %}" class="btn btn-outline-info btn-sm mb-2 w-100">
+                    <i class="fas fa-clipboard-list"></i> 选课管理
+                </a>
+                {% if user.is_superuser %}
+                <a href="{% url 'admin:index' %}" class="btn btn-outline-danger btn-sm mb-2 w-100" target="_blank">
+                    <i class="fas fa-cogs"></i> 系统管理
+                </a>
+                {% endif %}
+                <a href="#" class="btn btn-outline-warning btn-sm w-100" onclick="alert('统计功能开发中...')">
+                    <i class="fas fa-chart-bar"></i> 系统统计
+                </a>
+            </div>
+        </div>
+
+        <div class="card mt-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">账户设置</h5>
+            </div>
+            <div class="card-body">
+                <p class="small text-muted">
+                    <i class="fas fa-lock"></i> 如需修改密码，请联系超级管理员。
+                </p>
+                <a href="{% url 'users:edit_profile' %}" class="btn btn-outline-warning btn-sm w-100">
+                    <i class="fas fa-user-cog"></i> 编辑个人资料
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
