@@ -1,0 +1,403 @@
+{% extends 'base.html' %}
+
+{% block title %}
+    {% if object %}
+        编辑课程 - {{ object.course_name }}
+    {% else %}
+        添加课程
+    {% endif %} - 学生选课系统
+{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header {% if object %}bg-warning text-dark{% else %}bg-primary text-white{% endif %}">
+                <h4 class="mb-0">
+                    <i class="fas {% if object %}fa-edit{% else %}fa-plus{% endif %}"></i>
+                    {% if object %}
+                        编辑课程
+                    {% else %}
+                        添加课程
+                    {% endif %}
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post">
+                    {% csrf_token %}
+
+                    <!-- 基本信息 -->
+                    <h5 class="mb-3"><i class="fas fa-info-circle"></i> 基本信息</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <label for="{{ form.course_code.id_for_label }}" class="form-label">课程代码 *</label>
+                            {{ form.course_code }}
+                            {% if form.course_code.errors %}
+                                <div class="text-danger">{{ form.course_code.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">例如：CS101, MATH201, PHYS101</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.course_name.id_for_label }}" class="form-label">课程名称 *</label>
+                            {{ form.course_name }}
+                            {% if form.course_name.errors %}
+                                <div class="text-danger">{{ form.course_name.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">例如：计算机科学导论、高等数学、大学物理</div>
+                        </div>
+                    </div>
+
+                    <!-- 学分和学时 -->
+                    <div class="row mt-3">
+                        <div class="col-md-4">
+                            <label for="{{ form.credits.id_for_label }}" class="form-label">学分 *</label>
+                            {{ form.credits }}
+                            {% if form.credits.errors %}
+                                <div class="text-danger">{{ form.credits.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">建议：1-6学分</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.hours.id_for_label }}" class="form-label">学时 *</label>
+                            {{ form.hours }}
+                            {% if form.hours.errors %}
+                                <div class="text-danger">{{ form.hours.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">建议：16-96学时</div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="{{ form.max_students.id_for_label }}" class="form-label">最大选课人数 *</label>
+                            {{ form.max_students }}
+                            {% if form.max_students.errors %}
+                                <div class="text-danger">{{ form.max_students.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">建议：10-100人</div>
+                        </div>
+                    </div>
+
+                    <!-- 学年和学期 -->
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.academic_year.id_for_label }}" class="form-label">学年</label>
+                            {{ form.academic_year }}
+                            {% if form.academic_year.errors %}
+                                <div class="text-danger">{{ form.academic_year.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">例如：2025, 2026</div>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ form.semester.id_for_label }}" class="form-label">学期</label>
+                            {{ form.semester }}
+                            {% if form.semester.errors %}
+                                <div class="text-danger">{{ form.semester.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">例如：春季, 秋季</div>
+                        </div>
+                    </div>
+
+                    <!-- 课程描述 -->
+                    <div class="row mt-4">
+                        <div class="col-12">
+                            <label for="{{ form.description.id_for_label }}" class="form-label">课程描述</label>
+                            {{ form.description }}
+                            {% if form.description.errors %}
+                                <div class="text-danger">{{ form.description.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">
+                                <p class="mb-2"><i class="fas fa-lightbulb"></i> 描述要求：</p>
+                                <ul class="small text-muted">
+                                    <li>简要介绍课程内容和目标</li>
+                                    <li>说明先修要求和适用对象</li>
+                                    <li>描述教学方法与考核方式</li>
+                                    <li>字数建议：100-500字</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 快速选择模板 -->
+                    <div class="alert alert-info mt-3">
+                        <h6><i class="fas fa-magic"></i> 快速模板</h6>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <button type="button" class="btn btn-outline-primary btn-sm mb-2 w-100" onclick="fillTemplate('cs')">
+                                    <i class="fas fa-laptop-code"></i> 计算机科学
+                                </button>
+                                <button type="button" class="btn btn-outline-success btn-sm mb-2 w-100" onclick="fillTemplate('math')">
+                                    <i class="fas fa-calculator"></i> 数学课程
+                                </button>
+                                <button type="button" class="btn btn-outline-info btn-sm mb-2 w-100" onclick="fillTemplate('physics')">
+                                    <i class="fas fa-atom"></i> 物理课程
+                                </button>
+                            </div>
+                            <div class="col-md-6">
+                                <button type="button" class="btn btn-outline-warning btn-sm mb-2 w-100" onclick="fillTemplate('language')">
+                                    <i class="fas fa-language"></i> 语言课程
+                                </button>
+                                <button type="button" class="btn btn-outline-danger btn-sm mb-2 w-100" onclick="fillTemplate('art')">
+                                    <i class="fas fa-palette"></i> 艺术课程
+                                </button>
+                                <button type="button" class="btn btn-outline-secondary btn-sm mb-2 w-100" onclick="fillTemplate('pe')">
+                                    <i class="fas fa-running"></i> 体育课程
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 操作提示 -->
+                    <div class="alert alert-warning mt-3">
+                        <h6><i class="fas fa-exclamation-triangle"></i> 操作须知</h6>
+                        <ul class="mb-0">
+                            <li>课程代码必须唯一，建议使用学科代码加序号格式</li>
+                            <li>添加课程后，需要创建相应的课程班次才能供学生选择</li>
+                            <li>学分和学时要符合教学计划要求</li>
+                            <li>课程描述将显示给学生参考，请认真填写</li>
+                            <li>修改课程信息会影响所有相关的班次</li>
+                        </ul>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <div class="d-flex justify-content-between mt-4">
+                        <a href="{% url 'courses:course_list' %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> 返回课程列表
+                        </a>
+                        <div>
+                            {% if object %}
+                                <button type="submit" class="btn btn-warning">
+                                    <i class="fas fa-save"></i> 更新课程
+                                </button>
+                            {% else %}
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> 创建课程
+                                </button>
+                            {% endif %}
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 侧边栏 -->
+    <div class="col-md-4">
+        <!-- 统计信息 -->
+        <div class="card">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0"><i class="fas fa-chart-bar"></i> 课程统计</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>总课程数</span>
+                        <span class="badge bg-primary" id="totalCourses">0</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>本学期课程</span>
+                        <span class="badge bg-success" id="semesterCourses">0</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>总学分</span>
+                        <span class="badge bg-info" id="totalCredits">0</span>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <div class="d-flex justify-content-between">
+                        <span>平均学分</span>
+                        <span class="badge bg-warning" id="avgCredits">0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 快速操作 -->
+        <div class="card mt-3">
+            <div class="card-header bg-success text-white">
+                <h5 class="mb-0"><i class="fas fa-bolt"></i> 快速操作</h5>
+            </div>
+            <div class="card-body">
+                <a href="{% url 'courses:course_list' %}" class="btn btn-outline-primary btn-sm mb-2 w-100">
+                    <i class="fas fa-list"></i> 课程列表
+                </a>
+                <a href="{% url 'courses:class_list' %}" class="btn btn-outline-success btn-sm mb-2 w-100">
+                    <i class="fas fa-chalkboard"></i> 班次管理
+                </a>
+                <a href="{% url 'courses:enrollment_list' %}" class="btn btn-outline-info btn-sm mb-2 w-100">
+                    <i class="fas fa-clipboard-list"></i> 选课管理
+                </a>
+                {% if user.user_type == 'admin' %}
+                    <a href="{% url 'courses:user_list' %}" class="btn btn-outline-warning btn-sm w-100">
+                        <i class="fas fa-users"></i> 用户管理
+                    </a>
+                {% endif %}
+            </div>
+        </div>
+
+        <!-- 帮助信息 -->
+        <div class="card mt-3">
+            <div class="card-header bg-secondary text-white">
+                <h5 class="mb-0"><i class="fas fa-question-circle"></i> 帮助</h5>
+            </div>
+            <div class="card-body">
+                <div class="accordion" id="helpAccordion">
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="helpHeading1">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#helpCollapse1" aria-expanded="false" aria-controls="helpCollapse1">
+                                课程代码规则
+                            </button>
+                        </h2>
+                        <div id="helpCollapse1" class="accordion-collapse collapse" aria-labelledby="helpHeading1" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <small class="text-muted">
+                                    <ul>
+                                        <li>建议使用学科英文缩写+数字格式</li>
+                                        <li>例如：CS101, MATH201, PHYS301</li>
+                                        <li>避免使用特殊字符和空格</li>
+                                        <li>同一课程的不同班次使用相同课程代码</li>
+                                    </ul>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="accordion-item">
+                        <h2 class="accordion-header" id="helpHeading2">
+                            <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#helpCollapse2" aria-expanded="false" aria-controls="helpCollapse2">
+                                学分设置建议
+                            </button>
+                        </h2>
+                        <div id="helpCollapse2" class="accordion-collapse collapse" aria-labelledby="helpHeading2" data-bs-parent="#helpAccordion">
+                            <div class="accordion-body">
+                                <small class="text-muted">
+                                    <ul>
+                                        <li>理论课：1-4学分</li>
+                                        <li>实验课：1-2学分</li>
+                                        <li>体育课：0.5-2学分</li>
+                                        <li>实习课程：2-6学分</li>
+                                        <li>总学分建议控制在每学期20-30学分</li>
+                                    </ul>
+                                </small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 为表单字段添加样式类
+    const formFields = document.querySelectorAll('input, select, textarea');
+    formFields.forEach(field => {
+        field.classList.add('form-control');
+    });
+
+    // 加载统计数据
+    loadCourseStatistics();
+
+    // 表单提交确认
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const courseCode = document.getElementById('{{ form.course_code.id_for_label }}').value.trim();
+        const courseName = document.getElementById('{{ form.course_name.id_for_label }}').value.trim();
+
+        if (!courseCode) {
+            alert('请输入课程代码');
+            e.preventDefault();
+            return;
+        }
+
+        if (!courseName) {
+            alert('请输入课程名称');
+            e.preventDefault();
+            return;
+        }
+
+        const isEditing = {% if object %}true{% else %}false{% endif %};
+        const action = isEditing ? '更新' : '创建';
+        const confirmMessage = `确定要${action}课程 "${courseName}"(${courseCode}) 吗？`;
+
+        if (!confirm(confirmMessage)) {
+            e.preventDefault();
+        } else {
+            const submitBtn = form.querySelector('button[type="submit"]');
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + (isEditing ? '更新中...' : '创建中...');
+        }
+    });
+});
+
+// 课程模板填充
+function fillTemplate(type) {
+    const templates = {
+        'cs': {
+            course_code: 'CS' + Math.floor(Math.random() * 900 + 100),
+            course_name: '计算机科学导论',
+            credits: '3',
+            hours: '48',
+            description: '本课程介绍计算机科学的基本概念、原理和方法，包括算法、数据结构、程序设计等内容。培养学生的计算思维和编程能力。'
+        },
+        'math': {
+            course_code: 'MATH' + Math.floor(Math.random() * 900 + 100),
+            course_name: '高等数学',
+            credits: '4',
+            hours: '64',
+            description: '本课程内容包括微积分、线性代数、概率统计等数学基础知识，为后续专业课程奠定数学基础。培养学生的数学分析能力和逻辑思维能力。'
+        },
+        'physics': {
+            course_code: 'PHYS' + Math.floor(Math.random() * 900 + 100),
+            course_name: '大学物理',
+            credits: '3',
+            hours: '48',
+            description: '本课程系统介绍物理学的基本概念、定律和方法，包括力学、电磁学、热学等内容。培养学生的实验操作能力和科学分析思维。'
+        },
+        'language': {
+            course_code: 'LANG' + Math.floor(Math.random() * 900 + 100),
+            course_name: '大学英语',
+            credits: '2',
+            hours: '32',
+            description: '本课程旨在提高学生的英语综合应用能力，包括听说读写译等方面的训练。通过课堂教学和实践活动，培养学生的跨文化交际能力。'
+        },
+        'art': {
+            course_code: 'ART' + Math.floor(Math.random() * 900 + 100),
+            course_name: '美术基础',
+            credits: '2',
+            hours: '32',
+            description: '本课程介绍美术的基本原理和技法，包括素描、色彩、构图等内容。培养学生的审美能力和艺术创作能力。'
+        },
+        'pe': {
+            course_code: 'PE' + Math.floor(Math.random() * 900 + 100),
+            course_name: '体育',
+            credits: '1',
+            hours: '32',
+            description: '本课程通过体育锻炼和竞技活动，增强学生体质，培养团队合作精神和拼搏意识。'
+        }
+    };
+
+    const template = templates[type];
+    if (template) {
+        document.getElementById('{{ form.course_code.id_for_label }}').value = template.course_code;
+        document.getElementById('{{ form.course_name.id_for_label }}').value = template.course_name;
+        document.getElementById('{{ form.credits.id_for_label }}').value = template.credits;
+        document.getElementById('{{ form.hours.id_for_label }}').value = template.hours;
+        document.getElementById('{{ form.description.id_for_label }}').value = template.description;
+    }
+}
+
+function loadCourseStatistics() {
+    // 模拟统计数据加载
+    setTimeout(() => {
+        document.getElementById('totalCourses').textContent = '12';
+        document.getElementById('semesterCourses').textContent = '8';
+        document.getElementById('totalCredits').textContent = '36';
+        document.getElementById('avgCredits').textContent = '3.0';
+    }, 500);
+}
+</script>
+{% endblock %}
