@@ -61,10 +61,27 @@ class DashboardView(LoginRequiredMixin):
             ).order_by('-enrollment_count')[:5]
 
             # 教师工作量统计
-            teacher_workload = CourseClass.objects.values('teacher__username').annotate(
+            teacher_workload_data = CourseClass.objects.values('teacher__username').annotate(
                 class_count=models.Count('id'),
                 student_count=models.Sum('current_students')
             ).order_by('-student_count')[:5]
+
+            # 为每个教师计算平均学生数
+            teacher_workload = []
+            for teacher in teacher_workload_data:
+                avg_students = round(teacher['student_count'] / teacher['class_count'], 1) if teacher['class_count'] > 0 else 0
+                teacher_workload.append({
+                    'teacher__username': teacher['teacher__username'],
+                    'class_count': teacher['class_count'],
+                    'student_count': teacher['student_count'],
+                    'avg_students': avg_students
+                })
+
+            # 计算额外的统计数据
+            active_users = total_students + total_teachers + total_admins
+            user_type_percentage = round((active_users / total_users * 100), 1) if total_users > 0 else 0
+            capacity_usage = round((total_enrolled / total_capacity * 100), 1) if total_capacity > 0 else 0
+            total_enrollment_records = total_enrollments + pending_enrollments + rejected_enrollments + dropped_enrollments
 
             return render(request, 'admin/dashboard.html', {
                 # 用户统计
@@ -72,6 +89,7 @@ class DashboardView(LoginRequiredMixin):
                 'total_students': total_students,
                 'total_teachers': total_teachers,
                 'total_admins': total_admins,
+                'user_type_percentage': user_type_percentage,
 
                 # 课程统计
                 'total_courses': total_courses,
@@ -79,12 +97,13 @@ class DashboardView(LoginRequiredMixin):
                 'total_capacity': total_capacity,
                 'total_enrolled': total_enrolled,
                 'total_available': total_available,
-                'enrollment_rate': round((total_enrolled / total_capacity * 100), 1) if total_capacity > 0 else 0,
+                'enrollment_rate': capacity_usage,
 
                 # 选课状态
                 'pending_enrollments': pending_enrollments,
                 'rejected_enrollments': rejected_enrollments,
                 'dropped_enrollments': dropped_enrollments,
+                'total_enrollment_records': total_enrollment_records,
 
                 # 活跃度统计
                 'new_users_this_week': new_users_this_week,

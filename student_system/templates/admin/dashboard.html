@@ -223,7 +223,7 @@
                             </div>
                             <div class="admin-progress mt-3">
                                 <div class="admin-progress-bar admin-gradient-primary"
-                                     style="width: {{ total_students|default:0|add:total_teachers|default:0|mul:100|div:total_users|default:1 }}%"></div>
+                                     style="width: {{ user_type_percentage|default:0 }}%"></div>
                             </div>
                             <small class="text-muted">
                                 学生: {{ total_students }} | 教师: {{ total_teachers }} | 管理员: {{ total_admins }}
@@ -287,7 +287,7 @@
                             </div>
                             <div class="admin-progress mt-3">
                                 <div class="admin-progress-bar admin-gradient-info"
-                                     style="width: {{ total_enrolled|mul:100|div:total_capacity|default:1 }}%"></div>
+                                     style="width: {{ enrollment_rate|default:0 }}%"></div>
                             </div>
                             <small class="text-muted">
                                 剩余名额: {{ total_available }} | 容量: {{ total_capacity }}
@@ -418,7 +418,7 @@
                     </div>
                     <div class="text-center mt-3">
                         <small class="text-muted">
-                            总计: {{ total_enrollments|add:pending_enrollments|add:rejected_enrollments|add:dropped_enrollments }} 条记录
+                            总计: {{ total_enrollment_records }} 条记录
                         </small>
                     </div>
                 </div>
@@ -517,11 +517,7 @@
                                             <span class="badge bg-success">{{ teacher.student_count }}</span>
                                         </td>
                                         <td class="text-center">
-                                            {% if teacher.class_count > 0 %}
-                                                {{ teacher.student_count|floatformat:1|div:teacher.class_count }}
-                                            {% else %}
-                                                0
-                                            {% endif %}
+                                            {{ teacher.avg_students|default:0 }}
                                         </td>
                                     </tr>
                                     {% endfor %}
