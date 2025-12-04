@@ -198,8 +198,32 @@ class CourseDeleteView(LoginRequiredMixin, IsAdminMixin, DeleteView):
         return context
 
     def delete(self, request, *args, **kwargs):
-        messages.success(request, '课程删除成功！')
-        return super().delete(request, *args, **kwargs)
+        course = self.get_object()
+
+        # 收集统计信息用于消息显示
+        class_count = course.classes.count()
+        total_enrolled = sum(cls.current_students for cls in course.classes.all())
+
+        # 删除课程
+        result = super().delete(request, *args, **kwargs)
+
+        # 生成详细的成功消息
+        if class_count > 0 or total_enrolled > 0:
+            message_parts = [
+                f'课程 "{course.course_code} - {course.course_name}" 删除成功！'
+            ]
+
+            if class_count > 0:
+                message_parts.append(f'已删除 {class_count} 个课程班次')
+
+            if total_enrolled > 0:
+                message_parts.append(f'已清除 {total_enrolled} 条选课记录')
+
+            messages.success(request, ' | '.join(message_parts))
+        else:
+            messages.success(request, f'课程 "{course.course_code} - {course.course_name}" 删除成功！')
+
+        return result
 
 
 # 课程班次管理视图
