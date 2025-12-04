@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(.venvScriptsactivate)",
+      "Bash(call:*)",
+      "Bash(.venvScriptspython.exe:*)",
+      "Bash(source:*)",
+      "Bash(python manage.py migrate:*)",
+      "Bash(python manage.py runserver:*)",
+      "Bash(python manage.py shell:*)",
+      "Bash(python:*)",
+      "Bash(ls:*)",
+      "Bash(deactivate:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

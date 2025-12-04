@@ -19,8 +19,14 @@ class CustomLoginView(LoginView):
     redirect_authenticated_user = True
     success_url = reverse_lazy('courses:dashboard')
 
+    def form_invalid(self, form):
+        # 移除 print 语句避免 colorama 编码问题
+        messages.error(self.request, '用户名或密码错误')
+        return super().form_invalid(form)
+
     def get_success_url(self):
         user = self.request.user
+        # 移除 print 语句避免 colorama 编码问题
         if user.is_superuser or user.user_type == 'admin':
             return reverse_lazy('courses:dashboard')
         elif user.user_type == 'teacher':
@@ -48,13 +54,13 @@ def register_view(request):
                     # 根据用户类型创建对应的档案
                     if user_type == 'student':
                         # 重定向到学生档案创建页面
-                        return redirect('create_student_profile', user_id=user.id)
+                        return redirect('users:create_student_profile', user_id=user.id)
                     elif user_type == 'teacher':
                         # 重定向到教师档案创建页面
-                        return redirect('create_teacher_profile', user_id=user.id)
+                        return redirect('users:create_teacher_profile', user_id=user.id)
                     elif user_type == 'admin':
                         messages.success(request, '管理员账户创建成功！请登录。')
-                        return redirect('login')
+                        return redirect('users:login')
 
             except Exception as e:
                 messages.error(request, f'注册失败: {str(e)}')
@@ -81,7 +87,7 @@ def create_student_profile(request, user_id):
                     profile.save()
 
                     messages.success(request, '学生账户注册成功！请登录。')
-                    return redirect('login')
+                    return redirect('users:login')
             except Exception as e:
                 messages.error(request, f'档案创建失败: {str(e)}')
     else:
@@ -108,7 +114,7 @@ def create_teacher_profile(request, user_id):
                     profile.save()
 
                     messages.success(request, '教师账户注册成功！请登录。')
-                    return redirect('login')
+                    return redirect('users:login')
             except Exception as e:
                 messages.error(request, f'档案创建失败: {str(e)}')
     else:
