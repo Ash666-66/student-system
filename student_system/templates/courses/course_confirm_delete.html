@@ -4,7 +4,7 @@
 
 {% block content %}
 <div class="row justify-content-center">
-    <div class="col-md-8">
+    <div class="col-md-8 col-lg-9">
         <div class="card">
             <div class="card-header bg-danger text-white">
                 <h4 class="mb-0">
@@ -42,17 +42,48 @@
                     <div class="card-body">
                         <div class="row">
                             <div class="col-md-6">
-                                <p><strong>课程代码:</strong> {{ object.course_code }}</p>
-                                <p><strong>课程名称:</strong> {{ object.course_name }}</p>
-                                <p><strong>学分:</strong> {{ object.credits }} 学分</p>
-                                <p><strong>学时:</strong> {{ object.hours }} 学时</p>
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <td class="text-muted" style="width: 120px;"><strong>课程代码:</strong></td>
+                                        <td>{{ object.course_code }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>课程名称:</strong></td>
+                                        <td>{{ object.course_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>学分:</strong></td>
+                                        <td>{{ object.credits }} 学分</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>学时:</strong></td>
+                                        <td>{{ object.hours }} 学时</td>
+                                    </tr>
+                                </table>
                             </div>
                             <div class="col-md-6">
-                                <p><strong>学年:</strong> {{ object.academic_year|default:"未设定" }}</p>
-                                <p><strong>学期:</strong> {{ object.semester|default:"未设定" }}</p>
-                                <p><strong>开设班次:</strong> {{ class_count }} 个</p>
-                                <p><strong>已选学生:</strong> {{ total_enrolled }} 人</p>
-                                <p><strong>班级容量:</strong> {{ object.max_students }} 人</p>
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <td class="text-muted" style="width: 120px;"><strong>学年:</strong></td>
+                                        <td>{{ object.academic_year|default:"未设定" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>学期:</strong></td>
+                                        <td>{{ object.semester|default:"未设定" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>开设班次:</strong></td>
+                                        <td>
+                                            <span class="badge bg-info">{{ class_count }} 个</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>已选学生:</strong></td>
+                                        <td>
+                                            <span class="badge {% if total_enrolled > 0 %}bg-warning{% else %}bg-secondary{% endif %}">{{ total_enrolled }} 人</span>
+                                        </td>
+                                    </tr>
+                                </table>
                             </div>
                         </div>
                         {% if object.description %}
@@ -137,7 +168,7 @@
     </div>
 
     <!-- 侧边栏提示 -->
-    <div class="col-md-4">
+    <div class="col-md-4 col-lg-3">
         <div class="card">
             <div class="card-header bg-warning text-dark">
                 <h5 class="mb-0">
