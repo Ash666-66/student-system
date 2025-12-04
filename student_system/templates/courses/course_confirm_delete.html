@@ -50,7 +50,8 @@
                             <div class="col-md-6">
                                 <p><strong>学年:</strong> {{ object.academic_year|default:"未设定" }}</p>
                                 <p><strong>学期:</strong> {{ object.semester|default:"未设定" }}</p>
-                                <p><strong>开设班次:</strong> {{ object.classes.count }} 个</p>
+                                <p><strong>开设班次:</strong> {{ class_count }} 个</p>
+                                <p><strong>已选学生:</strong> {{ total_enrolled }} 人</p>
                                 <p><strong>班级容量:</strong> {{ object.max_students }} 人</p>
                             </div>
                         </div>
@@ -64,6 +65,42 @@
                         {% endif %}
                     </div>
                 </div>
+
+                <!-- 影响范围统计 -->
+                {% if class_count > 0 or total_enrolled > 0 %}
+                <div class="alert alert-warning" role="alert">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-chart-bar"></i>
+                        影响范围统计
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-chalkboard text-warning me-2"></i>
+                                <div>
+                                    <strong>{{ class_count }}</strong>
+                                    <small class="text-muted">个课程班次</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-users text-warning me-2"></i>
+                                <div>
+                                    <strong>{{ total_enrolled }}</strong>
+                                    <small class="text-muted">名学生的选课记录</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% if total_enrolled > 0 %}
+                    <hr class="my-2">
+                    <p class="mb-0 small">
+                        <strong>重要提示：</strong>删除后，这 {{ total_enrolled }} 名学生的选课记录和成绩将被永久删除，且无法恢复！
+                    </p>
+                    {% endif %}
+                </div>
+                {% endif %}
 
                 <!-- 确认表单 -->
                 <form method="post" id="deleteForm">

@@ -149,6 +149,19 @@ class CourseDeleteView(LoginRequiredMixin, IsAdminMixin, DeleteView):
     template_name = 'courses/course_confirm_delete.html'
     success_url = reverse_lazy('courses:course_list')
 
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        course = self.get_object()
+
+        # 计算统计数据
+        class_count = course.classes.count()
+        total_enrolled = sum(cls.current_students for cls in course.classes.all())
+
+        context['class_count'] = class_count
+        context['total_enrolled'] = total_enrolled
+
+        return context
+
     def delete(self, request, *args, **kwargs):
         messages.success(request, '课程删除成功！')
         return super().delete(request, *args, **kwargs)
