@@ -26,13 +26,74 @@ class DashboardView(LoginRequiredMixin):
     def get(self, request, *args, **kwargs):
         user = request.user
         if user.is_superuser or user.user_type == 'admin':
+            # 获取基础统计数据
+            total_users = User.objects.count()
+            total_students = User.objects.filter(user_type='student').count()
+            total_teachers = User.objects.filter(user_type='teacher').count()
+            total_admins = User.objects.filter(user_type='admin').count()
+
+            # 课程相关统计
+            total_courses = Course.objects.count()
+            total_classes = CourseClass.objects.count()
+            total_capacity = CourseClass.objects.aggregate(total=models.Sum('max_students'))['total'] or 0
+            total_enrolled = Enrollment.objects.filter(status='approved').count()
+            total_available = total_capacity - total_enrolled
+
+            # 选课状态统计
+            pending_enrollments = Enrollment.objects.filter(status='pending').count()
+            rejected_enrollments = Enrollment.objects.filter(status='rejected').count()
+            dropped_enrollments = Enrollment.objects.filter(status='dropped').count()
+
+            # 系统活跃度统计
+            from django.utils import timezone
+            from datetime import timedelta
+            today = timezone.now().date()
+            this_week = today - timedelta(days=7)
+            this_month = today - timedelta(days=30)
+
+            new_users_this_week = User.objects.filter(date_joined__date__gte=this_week).count()
+            new_users_this_month = User.objects.filter(date_joined__date__gte=this_month).count()
+            new_enrollments_today = Enrollment.objects.filter(enroll_time__date=today).count()
+
+            # 热门课程
+            popular_courses = CourseClass.objects.annotate(
+                enrollment_count=models.Count('enrollments', filter=models.Q(enrollments__status='approved'))
+            ).order_by('-enrollment_count')[:5]
+
+            # 教师工作量统计
+            teacher_workload = CourseClass.objects.values('teacher__username').annotate(
+                class_count=models.Count('id'),
+                student_count=models.Sum('current_students')
+            ).order_by('-student_count')[:5]
+
             return render(request, 'admin/dashboard.html', {
-                'total_users': User.objects.count(),
-                'total_students': User.objects.filter(user_type='student').count(),
-                'total_teachers': User.objects.filter(user_type='teacher').count(),
-                'total_courses': Course.objects.count(),
-                'total_enrollments': Enrollment.objects.filter(status='approved').count(),
-                'pending_enrollments': Enrollment.objects.filter(status='pending').count(),
+                # 用户统计
+                'total_users': total_users,
+                'total_students': total_students,
+                'total_teachers': total_teachers,
+                'total_admins': total_admins,
+
+                # 课程统计
+                'total_courses': total_courses,
+                'total_classes': total_classes,
+                'total_capacity': total_capacity,
+                'total_enrolled': total_enrolled,
+                'total_available': total_available,
+                'enrollment_rate': round((total_enrolled / total_capacity * 100), 1) if total_capacity > 0 else 0,
+
+                # 选课状态
+                'pending_enrollments': pending_enrollments,
+                'rejected_enrollments': rejected_enrollments,
+                'dropped_enrollments': dropped_enrollments,
+
+                # 活跃度统计
+                'new_users_this_week': new_users_this_week,
+                'new_users_this_month': new_users_this_month,
+                'new_enrollments_today': new_enrollments_today,
+
+                # 热门内容
+                'popular_courses': popular_courses,
+                'teacher_workload': teacher_workload,
             })
         elif user.user_type == 'teacher':
             return render(request, 'teacher/dashboard.html', {
