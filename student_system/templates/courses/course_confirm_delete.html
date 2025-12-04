@@ -134,7 +134,7 @@
                 {% endif %}
 
                 <!-- 确认表单 -->
-                <form method="post" id="deleteForm">
+                <form method="post" id="deleteForm" class="transition-danger">
                     {% csrf_token %}
 
                     <!-- 确认复选框 -->
@@ -214,28 +214,109 @@
 document.addEventListener('DOMContentLoaded', function() {
     const confirmCheckbox = document.getElementById('confirmDelete');
     const confirmButton = document.getElementById('confirmBtn');
+    const deleteForm = document.getElementById('deleteForm');
 
     // 复选框控制按钮状态
     confirmCheckbox.addEventListener('change', function() {
         confirmButton.disabled = !this.checked;
+        if (this.checked) {
+            confirmButton.classList.remove('btn-secondary');
+            confirmButton.classList.add('btn-danger', 'animate-pulse');
+        } else {
+            confirmButton.classList.remove('btn-danger', 'animate-pulse');
+            confirmButton.classList.add('btn-secondary');
+        }
     });
 
     // 表单提交确认
-    document.getElementById('deleteForm').addEventListener('submit', function(e) {
+    deleteForm.addEventListener('submit', function(e) {
         const courseName = '{{ object.course_name }}';
-        const finalConfirm = confirm(
-            '最后确认：\n\n' +
-            '您确定要删除课程 "' + courseName + '" 吗？\n\n' +
-            '此操作将永久删除该课程及所有相关数据，且无法恢复！\n\n' +
-            '点击"确定"继续删除，点击"取消"返回。'
-        );
+        const courseCode = '{{ object.course_code }}';
+        const classCount = {{ class_count|default:0 }};
+        const totalEnrolled = {{ total_enrolled|default:0 }};
+
+        let confirmMessage = `最后确认：\n\n您确定要删除课程 "${courseCode} - ${courseName}" 吗？\n\n`;
+
+        if (classCount > 0 || totalEnrolled > 0) {
+            confirmMessage += `影响范围：\n- ${classCount} 个课程班次\n- ${totalEnrolled} 名学生的选课记录\n\n`;
+        }
+
+        confirmMessage += `此操作将永久删除该课程及所有相关数据，且无法恢复！\n\n点击"确定"继续删除，点击"取消"返回。`;
+
+        const finalConfirm = confirm(confirmMessage);
 
         if (!finalConfirm) {
             e.preventDefault();
             return;
         }
+
+        // 禁用按钮并显示加载状态
+        confirmButton.disabled = true;
+        confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 删除中...';
+
+        // 禁用取消按钮
+        const cancelButton = deleteForm.querySelector('button[type="button"]');
+        if (cancelButton) {
+            cancelButton.disabled = true;
+        }
+    });
+
+    // 页面离开提醒
+    let formChanged = false;
+    document.addEventListener('beforeunload', function(e) {
+        if (formChanged && !confirmButton.disabled) {
+            e.preventDefault();
+            e.returnValue = '您有未完成的删除操作，确定要离开吗？';
+            return e.returnValue;
+        }
+    });
+
+    // 监听复选框变化
+    confirmCheckbox.addEventListener('change', function() {
+        formChanged = this.checked;
+    });
+
+    // 添加键盘快捷键支持
+    document.addEventListener('keydown', function(e) {
+        // ESC键取消操作
+        if (e.key === 'Escape') {
+            window.history.back();
+        }
+        // Ctrl+Enter快速确认（仅在复选框选中时）
+        if (e.ctrlKey && e.key === 'Enter' && !confirmButton.disabled) {
+            deleteForm.dispatchEvent(new Event('submit'));
+        }
+    });
+
+    // 添加视觉反馈
+    confirmCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            deleteForm.classList.add('border-danger');
+            setTimeout(() => {
+                deleteForm.classList.add('shadow-lg');
+            }, 100);
+        } else {
+            deleteForm.classList.remove('border-danger', 'shadow-lg');
+        }
     });
 });
+
+// 添加CSS动画样式
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+    .animate-pulse {
+        animation: pulse 2s infinite;
+    }
+    .transition-danger {
+        transition: all 0.3s ease;
+    }
+`;
+document.head.appendChild(style);
 </script>
 {% endblock %}
 {% endblock %}
