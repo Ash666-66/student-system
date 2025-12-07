@@ -10,7 +10,15 @@
       "Bash(python manage.py shell:*)",
       "Bash(python:*)",
       "Bash(ls:*)",
-      "Bash(deactivate:*)"
+      "Bash(deactivate:*)",
+      "Bash(curl:*)",
+      "Bash(netstat:*)",
+      "Bash(findstr:*)",
+      "Bash(taskkill:*)",
+      "Bash(tasklist:*)",
+      "Bash(cmd /c \"taskkill /F /PID 32908 && taskkill /F /PID 33028\")",
+      "Bash(cmd:*)",
+      "Bash(set:*)"
     ],
     "deny": [],
     "ask": []

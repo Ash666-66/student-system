@@ -692,15 +692,78 @@ def admin_delete_user_view(request, pk):
         messages.error(request, '您没有权限删除超级用户！')
         return redirect('courses:user_list')
 
+    # 检查是否是最后一个管理员
+    if user_to_delete.user_type == 'admin' and not user_to_delete.is_superuser:
+        admin_count = User.objects.filter(user_type='admin', is_active=True).count()
+        if admin_count <= 1:
+            messages.error(request, '不能删除最后一个管理员账户！')
+            return redirect('courses:user_list')
+
+    # 数据依赖检查
+    blocking_info = []
+    if user_to_delete.user_type == 'student':
+        enrollment_count = user_to_delete.enrollment_set.count()
+        if enrollment_count > 0:
+            blocking_info.append(f'该学生有 {enrollment_count} 门选课记录')
+    elif user_to_delete.user_type == 'teacher':
+        class_count = user_to_delete.courseclass_set.count()
+        if class_count > 0:
+            blocking_info.append(f'该教师负责 {class_count} 个授课班级')
+
+        # 通过CourseClass计算相关课程数量
+        related_courses = Course.objects.filter(classes__teacher=user_to_delete).distinct()
+        course_count = related_courses.count()
+        if course_count > 0:
+            blocking_info.append(f'该教师关联 {course_count} 门课程')
+
+    # 如果有重要数据依赖，需要确认
     if request.method == 'POST':
+        confirm_delete_data = request.POST.get('confirm_delete_data', 'false')
+
+        if blocking_info and confirm_delete_data != 'true':
+            messages.error(request, f'删除被阻止：{"; ".join(blocking_info)}。请确认您了解删除的后果。')
+            return redirect('courses:user_list')
+
         username = user_to_delete.username
         try:
             with transaction.atomic():
+                # 记录删除操作
+                messages.info(request, f'正在删除用户 {username} 及其所有相关数据...')
+
+                # 删除选课记录（如果有）
+                if user_to_delete.user_type == 'student':
+                    enrollment_count = user_to_delete.enrollment_set.count()
+                    if enrollment_count > 0:
+                        user_to_delete.enrollment_set.all().delete()
+                        messages.info(request, f'已删除 {enrollment_count} 条选课记录')
+
+                # 删除授课班级（如果有）
+                if user_to_delete.user_type == 'teacher':
+                    class_count = user_to_delete.courseclass_set.count()
+                    if class_count > 0:
+                        # 不能直接删除有学生的班级，需要先取消关联
+                        classes_with_students = user_to_delete.courseclass_set.filter(current_students__gt=0)
+                        if classes_with_students.exists():
+                            for course_class in classes_with_students:
+                                # 将班级的教师设置为空，或者重新分配
+                                course_class.teacher = None
+                                course_class.save()
+                            messages.warning(request, f'已将 {classes_with_students.count()} 个有学生的班级的教师字段清空')
+
+                        # 删除没有学生的班级
+                        empty_classes = user_to_delete.courseclass_set.filter(current_students=0)
+                        empty_count = empty_classes.count()
+                        if empty_count > 0:
+                            empty_classes.delete()
+                            messages.info(request, f'已删除 {empty_count} 个空的授课班级')
+
                 # 删除相关的档案信息
                 if hasattr(user_to_delete, 'studentprofile'):
                     user_to_delete.studentprofile.delete()
+                    messages.info(request, '已删除学生档案')
                 elif hasattr(user_to_delete, 'teacherprofile'):
                     user_to_delete.teacherprofile.delete()
+                    messages.info(request, '已删除教师档案')
 
                 # 删除用户
                 user_to_delete.delete()
@@ -710,7 +773,20 @@ def admin_delete_user_view(request, pk):
 
         except Exception as e:
             messages.error(request, f'删除用户失败：{str(e)}')
+            return redirect('courses:user_list')
+
+    # 计算相关数据统计
+    stats = {}
+    if user_to_delete.user_type == 'student':
+        stats['total_enrollments'] = user_to_delete.enrollment_set.count()
+        stats['approved_enrollments'] = user_to_delete.enrollment_set.filter(status='approved').count()
+    elif user_to_delete.user_type == 'teacher':
+        stats['total_classes'] = user_to_delete.courseclass_set.count()
+        # 通过CourseClass计算相关课程数量
+        related_courses = Course.objects.filter(classes__teacher=user_to_delete).distinct()
+        stats['managed_courses'] = related_courses.count()
 
     return render(request, 'users/admin_delete_user.html', {
-        'user_to_delete': user_to_delete
+        'user_to_delete': user_to_delete,
+        'stats': stats
     })
