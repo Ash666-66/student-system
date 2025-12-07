@@ -50,7 +50,14 @@ class TeacherProfileForm(forms.ModelForm):
 class UserUpdateForm(forms.ModelForm):
     class Meta:
         model = User
-        fields = ('first_name', 'last_name', 'email', 'phone')
+        fields = ('username', 'first_name', 'last_name', 'email', 'phone')
+        widgets = {
+            'username': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入用户名'}),
+            'first_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入姓'}),
+            'last_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入名'}),
+            'email': forms.EmailInput(attrs={'class': 'form-control', 'placeholder': '请输入邮箱'}),
+            'phone': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入手机号', 'maxlength': '11'}),
+        }
 
 
 class StudentProfileUpdateForm(forms.ModelForm):
@@ -58,8 +65,12 @@ class StudentProfileUpdateForm(forms.ModelForm):
         model = StudentProfile
         fields = ('name', 'gender', 'birth_date', 'grade', 'major', 'class_name')
         widgets = {
-            'birth_date': forms.DateInput(attrs={'type': 'date'}),
-            'gender': forms.Select(choices=StudentProfile.GENDER_CHOICES)
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入姓名'}),
+            'gender': forms.Select(attrs={'class': 'form-select'}, choices=StudentProfile.GENDER_CHOICES),
+            'birth_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'grade': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入年级'}),
+            'major': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入专业'}),
+            'class_name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入班级'}),
         }
 
 
@@ -68,6 +79,9 @@ class TeacherProfileUpdateForm(forms.ModelForm):
         model = TeacherProfile
         fields = ('name', 'gender', 'birth_date', 'department', 'title')
         widgets = {
-            'birth_date': forms.DateInput(attrs={'type': 'date'}),
-            'gender': forms.Select(choices=TeacherProfile.GENDER_CHOICES)
+            'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入姓名'}),
+            'gender': forms.Select(attrs={'class': 'form-select'}, choices=TeacherProfile.GENDER_CHOICES),
+            'birth_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
+            'department': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入院系'}),
+            'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入职称'}),
         }

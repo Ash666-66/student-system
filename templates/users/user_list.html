@@ -93,6 +93,11 @@
                                     <a href="{% url 'courses:user_detail' user.pk %}" class="btn btn-sm btn-info">
                                         <i class="fas fa-eye"></i> 详情
                                     </a>
+                                    {% if request.user.user_type == 'admin' or request.user.is_superuser %}
+                                        <a href="{% url 'courses:user_edit' user.pk %}" class="btn btn-sm btn-warning ms-1">
+                                            <i class="fas fa-edit"></i> 编辑
+                                        </a>
+                                    {% endif %}
                                 </td>
                             </tr>
                         {% endfor %}

@@ -7,6 +7,11 @@ urlpatterns = [
     # 仪表板
     path('dashboard/', views.dashboard_view, name='dashboard'),
 
+    # 用户管理（管理员）- 放在前面避免与其他路由冲突
+    path('users/', views.UserListView.as_view(), name='user_list'),
+    path('users/<int:pk>/', views.UserDetailView.as_view(), name='user_detail'),
+    path('users/<int:pk>/edit/', views.user_edit_view, name='user_edit'),
+
     # 课程管理
     path('', views.CourseListView.as_view(), name='course_list'),
     path('<int:pk>/', views.CourseDetailView.as_view(), name='course_detail'),
@@ -31,8 +36,4 @@ urlpatterns = [
 
     # 公告管理
     path('announcements/create/', views.AnnouncementCreateView.as_view(), name='announcement_create'),
-
-    # 用户管理（管理员）
-    path('users/', views.UserListView.as_view(), name='user_list'),
-    path('users/<int:pk>/', views.UserDetailView.as_view(), name='user_detail'),
 ]

@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.urls import reverse_lazy
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db import models
@@ -15,8 +15,75 @@ from .forms import (
     CourseForm, CourseClassForm, EnrollmentForm, StudentEnrollmentForm,
     GradeForm, AnnouncementForm
 )
+from users.forms import (
+    UserUpdateForm, StudentProfileUpdateForm, TeacherProfileUpdateForm
+)
+from users.models import StudentProfile, TeacherProfile
 
 User = get_user_model()
+
+
+@login_required
+def user_edit_view(request, pk):
+    """编辑用户信息视图"""
+    # 只有管理员可以编辑用户信息
+    if not (request.user.user_type == 'admin' or request.user.is_superuser):
+        messages.error(request, '您没有权限编辑用户信息！')
+        return redirect('courses:user_detail', pk=pk)
+
+    user_obj = get_object_or_404(User, pk=pk)
+
+    # 获取或创建对应的档案对象
+    profile = None
+    profile_form = None
+
+    if user_obj.user_type == 'student':
+        profile, created = StudentProfile.objects.get_or_create(user=user_obj)
+        profile_form = StudentProfileUpdateForm(instance=profile)
+    elif user_obj.user_type == 'teacher':
+        profile, created = TeacherProfile.objects.get_or_create(user=user_obj)
+        profile_form = TeacherProfileUpdateForm(instance=profile)
+
+    # 用户基本信息表单
+    form = UserUpdateForm(instance=user_obj)
+
+    if request.method == 'POST':
+        form = UserUpdateForm(request.POST, instance=user_obj)
+
+        if user_obj.user_type == 'student' and profile:
+            profile_form = StudentProfileUpdateForm(request.POST, instance=profile)
+        elif user_obj.user_type == 'teacher' and profile:
+            profile_form = TeacherProfileUpdateForm(request.POST, instance=profile)
+
+        # 验证并保存表单
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    # 保存用户基本信息
+                    form.save()
+
+                    # 保存档案信息
+                    if profile_form and profile_form.is_valid():
+                        profile_form.save()
+                    elif profile_form:
+                        messages.error(request, '档案信息有误，请检查后重试！')
+                        return render(request, 'users/admin_edit_user.html', context)
+
+                    messages.success(request, f'用户 {user_obj.username} 的信息已更新！')
+                    return redirect('courses:user_detail', pk=user_obj.pk)
+            except Exception as e:
+                messages.error(request, f'保存失败：{str(e)}')
+        else:
+            messages.error(request, '表单验证失败，请检查输入内容！')
+
+    context = {
+        'user_obj': user_obj,
+        'form': form,
+        'profile_form': profile_form,
+        'profile': profile,
+    }
+
+    return render(request, 'users/admin_edit_user.html', context)
 
 
 class DashboardView(LoginRequiredMixin):
@@ -389,6 +456,84 @@ class UserDetailView(LoginRequiredMixin, IsAdminMixin, DetailView):
             pass
         return context
 
+
+
+
+class AdminUserUpdateView(LoginRequiredMixin, IsAdminMixin, UpdateView):
+    """管理员编辑用户信息"""
+    model = User
+    form_class = UserUpdateForm
+    template_name = 'users/admin_edit_user.html'
+    context_object_name = 'user_obj'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.get_object()
+
+        # 根据用户类型获取对应的档案表单
+        if user.user_type == 'student':
+            try:
+                profile = user.studentprofile
+                if 'profile_form' not in context:
+                    context['profile_form'] = StudentProfileUpdateForm(instance=profile)
+            except StudentProfile.DoesNotExist:
+                if 'profile_form' not in context:
+                    context['profile_form'] = StudentProfileUpdateForm()
+        elif user.user_type == 'teacher':
+            try:
+                profile = user.teacherprofile
+                if 'profile_form' not in context:
+                    context['profile_form'] = TeacherProfileUpdateForm(instance=profile)
+            except TeacherProfile.DoesNotExist:
+                if 'profile_form' not in context:
+                    context['profile_form'] = TeacherProfileUpdateForm()
+        else:
+            context['profile_form'] = None
+
+        return context
+
+  
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form_class()(request.POST, instance=self.object)
+        profile_form = None
+
+        if self.object.user_type == 'student':
+            try:
+                profile = self.object.studentprofile
+                profile_form = StudentProfileUpdateForm(request.POST, instance=profile)
+            except StudentProfile.DoesNotExist:
+                profile_form = StudentProfileUpdateForm(request.POST)
+        elif self.object.user_type == 'teacher':
+            try:
+                profile = self.object.teacherprofile
+                profile_form = TeacherProfileUpdateForm(request.POST, instance=profile)
+            except TeacherProfile.DoesNotExist:
+                profile_form = TeacherProfileUpdateForm(request.POST)
+
+        if form.is_valid() and (profile_form is None or profile_form.is_valid()):
+            with transaction.atomic():
+                # 保存用户基本信息
+                form.save()
+
+                # 保存档案信息
+                if profile_form:
+                    if hasattr(profile_form, 'instance') and not hasattr(profile_form.instance, 'user'):
+                        profile_form.instance.user = self.object
+                    profile_form.save()
+
+                messages.success(request, '用户信息更新成功！')
+                return redirect(self.get_success_url())
+        else:
+            messages.error(request, '请修正表单中的错误。')
+
+        return self.render_to_response(self.get_context_data(
+            form=form, profile_form=profile_form
+        ))
+
+    def get_success_url(self):
+        return reverse_lazy('courses:user_detail', kwargs={'pk': self.object.pk})
+  
 
 class CourseClassDeleteView(LoginRequiredMixin, IsAdminMixin, DeleteView):
     model = CourseClass
