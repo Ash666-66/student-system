@@ -320,19 +320,41 @@ def enroll_course_view(request, class_id):
     """学生选课"""
     if request.user.user_type != 'student':
         messages.error(request, '只有学生可以进行选课操作。')
-        return redirect('class_list')
+        return redirect('courses:class_list')
 
     course_class = get_object_or_404(CourseClass, id=class_id)
 
     # 检查是否已选过该课程
     if Enrollment.objects.filter(student=request.user, course_class=course_class).exists():
         messages.error(request, '您已经选过这门课程了。')
-        return redirect('class_detail', pk=class_id)
+        return redirect('courses:class_detail', pk=class_id)
+
+    # 检查是否选过同一课程的其他班次
+    existing_enrollments = Enrollment.objects.filter(
+        student=request.user,
+        course_class__course=course_class.course
+    ).exclude(status='rejected')
+
+    if existing_enrollments.exists():
+        course_name = course_class.course.course_name
+        messages.error(request, f'您已经选过《{course_name}》的其他班次了，不能重复选择同一门课程。')
+        return redirect('courses:class_detail', pk=class_id)
 
     # 检查名额
     if course_class.is_full:
         messages.error(request, '该课程班次已满，无法选课。')
-        return redirect('class_detail', pk=class_id)
+        return redirect('courses:class_detail', pk=class_id)
+
+    # 检查是否有待处理的申请
+    pending_enrollments = Enrollment.objects.filter(
+        student=request.user,
+        status='pending'
+    ).count()
+
+    # 限制每个学生最多同时有5个待处理申请
+    if pending_enrollments >= 5:
+        messages.error(request, f'您已有 {pending_enrollments} 个待处理的选课申请，请等待审核完成后再选课。')
+        return redirect('courses:class_detail', pk=class_id)
 
     if request.method == 'POST':
         # 确保POST数据中不会意外包含student字段
