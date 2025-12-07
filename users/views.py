@@ -40,7 +40,7 @@ class CustomLogoutView(LogoutView):
 
 
 def register_view(request):
-    """用户注册视图"""
+    """用户注册视图 - 只允许注册学生和教师"""
     if request.method == 'POST':
         user_form = CustomUserCreationForm(request.POST)
 
@@ -58,9 +58,6 @@ def register_view(request):
                     elif user_type == 'teacher':
                         # 重定向到教师档案创建页面
                         return redirect('users:create_teacher_profile', user_id=user.id)
-                    elif user_type == 'admin':
-                        messages.success(request, '管理员账户创建成功！请登录。')
-                        return redirect('users:login')
 
             except Exception as e:
                 messages.error(request, f'注册失败: {str(e)}')
@@ -72,6 +69,7 @@ def register_view(request):
     return render(request, 'users/register.html', {'form': user_form})
 
 
+@login_required
 def create_student_profile(request, user_id):
     """创建学生档案"""
     user = get_object_or_404(User, id=user_id)
@@ -86,8 +84,13 @@ def create_student_profile(request, user_id):
                     profile.user = user
                     profile.save()
 
-                    messages.success(request, '学生账户注册成功！请登录。')
-                    return redirect('users:login')
+                    # 检查是否由管理员创建
+                    if request.user.user_type == 'admin' or request.user.is_superuser:
+                        messages.success(request, '学生档案创建成功！')
+                        return redirect('courses:user_list')
+                    else:
+                        messages.success(request, '学生账户注册成功！请登录。')
+                        return redirect('users:login')
             except Exception as e:
                 messages.error(request, f'档案创建失败: {str(e)}')
     else:
@@ -99,6 +102,7 @@ def create_student_profile(request, user_id):
     })
 
 
+@login_required
 def create_teacher_profile(request, user_id):
     """创建教师档案"""
     user = get_object_or_404(User, id=user_id)
@@ -113,8 +117,13 @@ def create_teacher_profile(request, user_id):
                     profile.user = user
                     profile.save()
 
-                    messages.success(request, '教师账户注册成功！请登录。')
-                    return redirect('users:login')
+                    # 检查是否由管理员创建
+                    if request.user.user_type == 'admin' or request.user.is_superuser:
+                        messages.success(request, '教师档案创建成功！')
+                        return redirect('courses:user_list')
+                    else:
+                        messages.success(request, '教师账户注册成功！请登录。')
+                        return redirect('users:login')
             except Exception as e:
                 messages.error(request, f'档案创建失败: {str(e)}')
     else:

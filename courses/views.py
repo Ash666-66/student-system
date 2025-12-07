@@ -16,7 +16,8 @@ from .forms import (
     GradeForm, AnnouncementForm
 )
 from users.forms import (
-    UserUpdateForm, StudentProfileUpdateForm, TeacherProfileUpdateForm
+    UserUpdateForm, StudentProfileUpdateForm, TeacherProfileUpdateForm,
+    AdminUserCreationForm, StudentProfileForm, TeacherProfileForm
 )
 from users.models import StudentProfile, TeacherProfile
 
@@ -627,3 +628,89 @@ class AnnouncementCreateView(LoginRequiredMixin, CreateView):
         if self.object.course_class:
             return reverse_lazy('courses:class_detail', kwargs={'pk': self.object.course_class.id})
         return reverse_lazy('courses:course_list')
+
+
+@login_required
+def admin_create_user_view(request):
+    """管理员创建用户视图"""
+    # 只有管理员可以创建用户
+    if not (request.user.user_type == 'admin' or request.user.is_superuser):
+        messages.error(request, '您没有权限创建用户！')
+        return redirect('courses:dashboard')
+
+    if request.method == 'POST':
+        user_form = AdminUserCreationForm(request.POST)
+
+        if user_form.is_valid():
+            user_type = user_form.cleaned_data['user_type']
+
+            try:
+                with transaction.atomic():
+                    user = user_form.save()
+
+                    # 根据用户类型处理档案创建
+                    if user_type == 'student':
+                        messages.info(request, f'学生用户 {user.username} 创建成功！请完善学生档案信息。')
+                        return redirect('users:create_student_profile', user_id=user.id)
+                    elif user_type == 'teacher':
+                        messages.info(request, f'教师用户 {user.username} 创建成功！请完善教师档案信息。')
+                        return redirect('users:create_teacher_profile', user_id=user.id)
+                    elif user_type == 'admin':
+                        messages.success(request, f'管理员用户 {user.username} 创建成功！')
+                        return redirect('courses:user_list')
+
+            except Exception as e:
+                messages.error(request, f'创建用户失败：{str(e)}')
+        else:
+            messages.error(request, '请修正表单中的错误！')
+    else:
+        user_form = AdminUserCreationForm()
+
+    return render(request, 'users/admin_create_user.html', {
+        'form': user_form,
+        'title': '创建新用户'
+    })
+
+
+@login_required
+def admin_delete_user_view(request, pk):
+    """管理员删除用户视图"""
+    # 只有管理员可以删除用户
+    if not (request.user.user_type == 'admin' or request.user.is_superuser):
+        messages.error(request, '您没有权限删除用户！')
+        return redirect('courses:user_list')
+
+    user_to_delete = get_object_or_404(User, pk=pk)
+
+    # 防止删除自己
+    if user_to_delete == request.user:
+        messages.error(request, '不能删除自己的账户！')
+        return redirect('courses:user_list')
+
+    # 防止删除超级用户（除非自己是超级用户）
+    if user_to_delete.is_superuser and not request.user.is_superuser:
+        messages.error(request, '您没有权限删除超级用户！')
+        return redirect('courses:user_list')
+
+    if request.method == 'POST':
+        username = user_to_delete.username
+        try:
+            with transaction.atomic():
+                # 删除相关的档案信息
+                if hasattr(user_to_delete, 'studentprofile'):
+                    user_to_delete.studentprofile.delete()
+                elif hasattr(user_to_delete, 'teacherprofile'):
+                    user_to_delete.teacherprofile.delete()
+
+                # 删除用户
+                user_to_delete.delete()
+
+                messages.success(request, f'用户 {username} 已成功删除！')
+                return redirect('courses:user_list')
+
+        except Exception as e:
+            messages.error(request, f'删除用户失败：{str(e)}')
+
+    return render(request, 'users/admin_delete_user.html', {
+        'user_to_delete': user_to_delete
+    })

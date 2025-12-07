@@ -8,6 +8,15 @@
     <h1 class="h2">
         <i class="fas fa-users"></i> 用户管理
     </h1>
+    {% if request.user.user_type == 'admin' or request.user.is_superuser %}
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="{% url 'courses:admin_create_user' %}" class="btn btn-sm btn-primary">
+                    <i class="fas fa-user-plus"></i> 创建用户
+                </a>
+            </div>
+        </div>
+    {% endif %}
 </div>
 
 <div class="card shadow mb-4">
@@ -97,6 +106,13 @@
                                         <a href="{% url 'courses:user_edit' user.pk %}" class="btn btn-sm btn-warning ms-1">
                                             <i class="fas fa-edit"></i> 编辑
                                         </a>
+                                        {% if user != request.user %}
+                                            <a href="{% url 'courses:admin_delete_user' user.pk %}"
+                                               class="btn btn-sm btn-danger ms-1"
+                                               onclick="return confirm('确定要删除用户 {{ user.username }} 吗？此操作不可撤销！');">
+                                                <i class="fas fa-user-times"></i> 删除
+                                            </a>
+                                        {% endif %}
                                     {% endif %}
                                 </td>
                             </tr>

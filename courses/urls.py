@@ -9,8 +9,10 @@ urlpatterns = [
 
     # 用户管理（管理员）- 放在前面避免与其他路由冲突
     path('users/', views.UserListView.as_view(), name='user_list'),
+    path('users/create/', views.admin_create_user_view, name='admin_create_user'),
     path('users/<int:pk>/', views.UserDetailView.as_view(), name='user_detail'),
     path('users/<int:pk>/edit/', views.user_edit_view, name='user_edit'),
+    path('users/<int:pk>/delete/', views.admin_delete_user_view, name='admin_delete_user'),
 
     # 课程管理
     path('', views.CourseListView.as_view(), name='course_list'),
