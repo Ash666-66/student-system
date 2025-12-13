@@ -84,12 +84,20 @@ class UserUpdateForm(forms.ModelForm):
 
 
 class StudentProfileUpdateForm(forms.ModelForm):
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 只有在初始化时才添加空选项，避免覆盖已有选择
+        if not self.instance.pk:  # 如果是新建实例
+            self.fields['gender'].choices = [('', '请选择性别')] + list(StudentProfile.GENDER_CHOICES)
+        else:  # 如果是编辑实例，确保显示当前值
+            self.fields['gender'].choices = list(StudentProfile.GENDER_CHOICES)
+
     class Meta:
         model = StudentProfile
         fields = ('name', 'gender', 'birth_date', 'grade', 'major', 'class_name')
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入姓名'}),
-            'gender': forms.Select(attrs={'class': 'form-select'}, choices=StudentProfile.GENDER_CHOICES),
+            'gender': forms.Select(attrs={'class': 'form-select'}),
             'birth_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'grade': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入年级'}),
             'major': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入专业'}),
@@ -98,12 +106,23 @@ class StudentProfileUpdateForm(forms.ModelForm):
 
 
 class TeacherProfileUpdateForm(forms.ModelForm):
+    # 暂时不包含teacher_id字段以避免唯一性约束问题
+    # 如果需要编辑teacher_id，应该通过管理员界面进行
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        # 只有在初始化时才添加空选项，避免覆盖已有选择
+        if not self.instance.pk:  # 如果是新建实例
+            self.fields['gender'].choices = [('', '请选择性别')] + list(TeacherProfile.GENDER_CHOICES)
+        else:  # 如果是编辑实例，确保显示当前值
+            self.fields['gender'].choices = list(TeacherProfile.GENDER_CHOICES)
+
     class Meta:
         model = TeacherProfile
         fields = ('name', 'gender', 'birth_date', 'department', 'title')
         widgets = {
             'name': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入姓名'}),
-            'gender': forms.Select(attrs={'class': 'form-select'}, choices=TeacherProfile.GENDER_CHOICES),
+            'gender': forms.Select(attrs={'class': 'form-select'}),
             'birth_date': forms.DateInput(attrs={'type': 'date', 'class': 'form-control'}),
             'department': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入院系'}),
             'title': forms.TextInput(attrs={'class': 'form-control', 'placeholder': '请输入职称'}),

@@ -188,13 +188,25 @@ def edit_profile_view(request):
                         profile_form.save()
 
                     messages.success(request, '档案更新成功！')
-                    return redirect('profile')
+                    return redirect('users:profile')
             else:
-                messages.error(request, '请修正表单中的错误。')
+                # 添加更详细的错误信息显示
+                error_messages = []
+                if user_form.errors:
+                    for field, errors in user_form.errors.items():
+                        error_messages.append(f"{field}: {', '.join(errors)}")
+                if profile_form and profile_form.errors:
+                    for field, errors in profile_form.errors.items():
+                        error_messages.append(f"{field}: {', '.join(errors)}")
+
+                if error_messages:
+                    messages.error(request, f'表单验证失败: {"; ".join(error_messages)}')
+                else:
+                    messages.error(request, '请修正表单中的错误。')
 
         except (StudentProfile.DoesNotExist, TeacherProfile.DoesNotExist):
             messages.error(request, '您的档案信息不完整，请联系管理员。')
-            return redirect('profile')
+            return redirect('users:profile')
     else:
         user_form = UserUpdateForm(instance=user)
 
@@ -208,13 +220,16 @@ def edit_profile_view(request):
                 profile_form = TeacherProfileUpdateForm(instance=profile)
                 template_name = 'users/edit_teacher_profile.html'
             else:
+                profile = None  # 确保profile变量被定义
                 profile_form = None
                 template_name = 'users/edit_admin_profile.html'
         except (StudentProfile.DoesNotExist, TeacherProfile.DoesNotExist):
+            profile = None  # 确保profile变量被定义
             profile_form = None
             template_name = 'users/edit_admin_profile.html'
 
     return render(request, template_name, {
         'user_form': user_form,
-        'profile_form': profile_form
+        'profile_form': profile_form,
+        'profile': profile  # 添加profile对象以便模板访问teacher_id
     })

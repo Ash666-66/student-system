@@ -18,7 +18,8 @@
       "Bash(tasklist:*)",
       "Bash(cmd /c \"taskkill /F /PID 32908 && taskkill /F /PID 33028\")",
       "Bash(cmd:*)",
-      "Bash(set:*)"
+      "Bash(set:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []

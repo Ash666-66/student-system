@@ -33,46 +33,91 @@
                             {% endif %}
                         </div>
                     </div>
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <label for="{{ user_form.first_name.id_for_label }}" class="form-label">姓</label>
+                            {{ user_form.first_name }}
+                            {% if user_form.first_name.errors %}
+                                <div class="text-danger">{{ user_form.first_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ user_form.last_name.id_for_label }}" class="form-label">名</label>
+                            {{ user_form.last_name }}
+                            {% if user_form.last_name.errors %}
+                                <div class="text-danger">{{ user_form.last_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <label for="{{ user_form.phone.id_for_label }}" class="form-label">联系电话</label>
+                            {{ user_form.phone }}
+                            {% if user_form.phone.errors %}
+                                <div class="text-danger">{{ user_form.phone.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
 
                     <!-- 学生档案信息 -->
                     <h5 class="mb-3"><i class="fas fa-graduation-cap"></i> 学生档案信息</h5>
                     <div class="row">
                         <div class="col-md-6">
-                            <label for="{{ profile_form.student_number.id_for_label }}" class="form-label">学号</label>
-                            {{ profile_form.student_number }}
-                            {% if profile_form.student_number.errors %}
-                                <div class="text-danger">{{ profile_form.student_number.errors }}</div>
-                            {% endif %}
+                            <!-- 修复：学号改为只读显示，避免唯一性约束问题 -->
+                            <label class="form-label">学号</label>
+                            <input type="text" class="form-control" value="{% if profile %}{{ profile.student_id }}{% endif %}" readonly>
+                            <small class="form-text text-muted">学号不可编辑，如需修改请联系管理员</small>
                         </div>
                         <div class="col-md-6">
-                            <label for="{{ profile_form.phone.id_for_label }}" class="form-label">联系电话</label>
-                            {{ profile_form.phone }}
-                            {% if profile_form.phone.errors %}
-                                <div class="text-danger">{{ profile_form.phone.errors }}</div>
+                            <label for="{{ profile_form.name.id_for_label }}" class="form-label">真实姓名</label>
+                            {{ profile_form.name }}
+                            {% if profile_form.name.errors %}
+                                <div class="text-danger">{{ profile_form.name.errors }}</div>
                             {% endif %}
                         </div>
                     </div>
 
                     <div class="row mt-3">
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label for="{{ profile_form.grade.id_for_label }}" class="form-label">年级</label>
                             {{ profile_form.grade }}
                             {% if profile_form.grade.errors %}
                                 <div class="text-danger">{{ profile_form.grade.errors }}</div>
                             {% endif %}
                         </div>
-                        <div class="col-md-4">
+                        <div class="col-md-6">
                             <label for="{{ profile_form.major.id_for_label }}" class="form-label">专业</label>
                             {{ profile_form.major }}
                             {% if profile_form.major.errors %}
                                 <div class="text-danger">{{ profile_form.major.errors }}</div>
                             {% endif %}
                         </div>
-                        <div class="col-md-4">
-                            <label for="{{ profile_form.student_class.id_for_label }}" class="form-label">班级</label>
-                            {{ profile_form.student_class }}
-                            {% if profile_form.student_class.errors %}
-                                <div class="text-danger">{{ profile_form.student_class.errors }}</div>
+                    </div>
+
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <label for="{{ profile_form.class_name.id_for_label }}" class="form-label">班级</label>
+                            {{ profile_form.class_name }}
+                            {% if profile_form.class_name.errors %}
+                                <div class="text-danger">{{ profile_form.class_name.errors }}</div>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-6">
+                            <label for="{{ profile_form.gender.id_for_label }}" class="form-label">性别</label>
+                            {{ profile_form.gender }}
+                            {% if profile_form.gender.errors %}
+                                <div class="text-danger">{{ profile_form.gender.errors }}</div>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <!-- 添加出生日期字段 -->
+                    <div class="row mt-3">
+                        <div class="col-md-12">
+                            <label for="{{ profile_form.birth_date.id_for_label }}" class="form-label">出生日期</label>
+                            {{ profile_form.birth_date }}
+                            {% if profile_form.birth_date.errors %}
+                                <div class="text-danger">{{ profile_form.birth_date.errors }}</div>
                             {% endif %}
                         </div>
                     </div>
