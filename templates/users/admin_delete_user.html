@@ -1,0 +1,268 @@
+{% extends 'base.html' %}
+
+{% block title %}删除用户 - {{ user_to_delete.username }} - 学生选课系统{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-user-times"></i> 删除用户
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'courses:user_detail' user_to_delete.pk %}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> 返回用户详情
+            </a>
+            <a href="{% url 'courses:user_list' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-list"></i> 用户列表
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card shadow border-danger">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-exclamation-triangle"></i> 确认删除用户
+                </h4>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-danger" role="alert">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <strong>警告：此操作不可撤销！</strong> 删除用户将永久移除其所有相关信息，包括：
+                    <ul class="mb-0 mt-2">
+                        <li>用户账户和登录信息</li>
+                        <li>学生/教师档案信息</li>
+                        <li>选课记录和成绩信息</li>
+                        <li>相关的所有系统记录</li>
+                    </ul>
+                </div>
+
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">要删除的用户信息</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td><strong>用户名:</strong></td>
+                                        <td>{{ user_to_delete.username }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>姓名:</strong></td>
+                                        <td>{{ user_to_delete.first_name }} {{ user_to_delete.last_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>邮箱:</strong></td>
+                                        <td>{{ user_to_delete.email }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>手机号:</strong></td>
+                                        <td>{{ user_to_delete.phone|default:"未填写" }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="table table-sm">
+                                    <tr>
+                                        <td><strong>用户类型:</strong></td>
+                                        <td>
+                                            {% if user_to_delete.user_type == 'admin' %}
+                                                <span class="badge bg-danger">管理员</span>
+                                            {% elif user_to_delete.user_type == 'teacher' %}
+                                                <span class="badge bg-warning text-dark">教师</span>
+                                            {% elif user_to_delete.user_type == 'student' %}
+                                                <span class="badge bg-primary">学生</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>账户状态:</strong></td>
+                                        <td>
+                                            {% if user_to_delete.is_active %}
+                                                <span class="badge bg-success">活跃</span>
+                                            {% else %}
+                                                <span class="badge bg-secondary">禁用</span>
+                                            {% endif %}
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>注册时间:</strong></td>
+                                        <td>{{ user_to_delete.date_joined|date:"Y-m-d H:i" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td><strong>最后登录:</strong></td>
+                                        <td>{{ user_to_delete.last_login|date:"Y-m-d H:i"|default:"从未登录" }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 检查相关数据 -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">相关数据检查</h5>
+                    </div>
+                    <div class="card-body">
+                        {% if user_to_delete.user_type == 'student' %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>选课数量:</strong>
+                                        <span class="badge bg-info">
+                                            {{ stats.total_enrollments }} 门课程
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>已完成课程:</strong>
+                                        <span class="badge bg-success">
+                                            {{ stats.approved_enrollments }} 门
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        {% elif user_to_delete.user_type == 'teacher' %}
+                            <div class="row">
+                                <div class="col-md-6">
+                                    <p><strong>授课班次:</strong>
+                                        <span class="badge bg-info">
+                                            {{ stats.total_classes }} 个班次
+                                        </span>
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p><strong>管理课程:</strong>
+                                        <span class="badge bg-warning">
+                                            {{ stats.managed_courses }} 门课程
+                                        </span>
+                                    </p>
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 警告信息 -->
+                {% if user_to_delete.user_type == 'student' and stats.total_enrollments > 0 %}
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>注意：</strong> 该学生有 {{ stats.total_enrollments }} 门选课记录，删除后将失去所有课程和成绩信息！
+                    </div>
+                {% endif %}
+
+                {% if user_to_delete.user_type == 'teacher' and stats.total_classes > 0 %}
+                    <div class="alert alert-warning" role="alert">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        <strong>注意：</strong> 该教师有 {{ stats.total_classes }} 个授课班级，删除后需要重新分配课程教学任务！
+                    </div>
+                {% endif %}
+
+                <form method="post" onsubmit="return confirmDelete();">
+                    {% csrf_token %}
+
+                    <div class="form-group mb-3">
+                        <label for="confirmUsername" class="form-label">
+                            请输入用户名 <code>{{ user_to_delete.username }}</code> 以确认删除：
+                        </label>
+                        <input type="text" class="form-control" id="confirmUsername" name="confirmUsername"
+                               placeholder="请输入用户名" required>
+                        <small class="form-text text-muted">这是一个额外的确认步骤，防止误删。</small>
+                    </div>
+
+                    {% if user_to_delete.user_type == 'student' and stats.total_enrollments > 0 %}
+                    <div class="form-group mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirmDeleteData" name="confirm_delete_data" value="true" required>
+                            <label class="form-check-label" for="confirmDeleteData">
+                                我确认删除该学生及其所有选课记录和成绩信息
+                            </label>
+                        </div>
+                        <small class="form-text text-danger">
+                            <strong>警告：</strong>此操作将永久删除 {{ stats.total_enrollments }} 条选课记录！
+                        </small>
+                    </div>
+                    {% endif %}
+
+                    {% if user_to_delete.user_type == 'teacher' and stats.total_classes > 0 %}
+                    <div class="form-group mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirmDeleteData" name="confirm_delete_data" value="true" required>
+                            <label class="form-check-label" for="confirmDeleteData">
+                                我确认删除该教师及其所有授课班级和相关数据
+                            </label>
+                        </div>
+                        <small class="form-text text-danger">
+                            <strong>警告：</strong>此操作将影响 {{ stats.total_classes }} 个授课班级！
+                        </small>
+                    </div>
+                    {% endif %}
+
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a href="{% url 'courses:user_detail' user_to_delete.pk %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> 取消
+                            </a>
+                            <a href="{% url 'courses:user_list' %}" class="btn btn-outline-secondary ms-2">
+                                <i class="fas fa-list"></i> 用户列表
+                            </a>
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-danger" id="deleteBtn" disabled>
+                                <i class="fas fa-user-times"></i> 确认删除用户
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmUsernameInput = document.getElementById('confirmUsername');
+    const deleteBtn = document.getElementById('deleteBtn');
+    const expectedUsername = '{{ user_to_delete.username }}';
+
+    // 启用/禁用删除按钮
+    confirmUsernameInput.addEventListener('input', function() {
+        if (this.value.trim() === expectedUsername) {
+            deleteBtn.disabled = false;
+            deleteBtn.classList.remove('btn-secondary');
+            deleteBtn.classList.add('btn-danger');
+        } else {
+            deleteBtn.disabled = true;
+            deleteBtn.classList.remove('btn-danger');
+            deleteBtn.classList.add('btn-secondary');
+        }
+    });
+});
+
+function confirmDelete() {
+    const confirmUsernameInput = document.getElementById('confirmUsername');
+    const expectedUsername = '{{ user_to_delete.username }}';
+
+    if (confirmUsernameInput.value.trim() !== expectedUsername) {
+        alert('用户名不匹配，请重新输入！');
+        return false;
+    }
+
+    const confirmMessage = `您确定要删除用户 "${expectedUsername}" 吗？\n\n` +
+        '此操作将永久删除该用户的所有信息，包括：\n' +
+        '• 用户账户和登录信息\n' +
+        '• 学生/教师档案\n' +
+        '• 选课记录和成绩\n' +
+        '• 相关系统记录\n\n' +
+        '此操作不可撤销！';
+
+    return confirm(confirmMessage);
+}
+</script>
+{% endblock %}

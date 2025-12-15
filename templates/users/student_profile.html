@@ -25,23 +25,39 @@
                         <table class="table table-borderless">
                             <tr>
                                 <td><strong>学号:</strong></td>
-                                <td>{{ profile.student_number }}</td>
+                                <td>{{ profile.student_id }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>真实姓名:</strong></td>
+                                <td>{{ profile.name|default:"未填写" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>性别:</strong></td>
+                                <td>
+                                    {% if profile.gender == 'M' %}男
+                                    {% elif profile.gender == 'F' %}女
+                                    {% else %}未填写{% endif %}
+                                </td>
                             </tr>
                             <tr>
                                 <td><strong>年级:</strong></td>
-                                <td>{{ profile.get_grade_display }}</td>
+                                <td>{{ profile.grade|default:"未填写" }}</td>
                             </tr>
                             <tr>
                                 <td><strong>专业:</strong></td>
-                                <td>{{ profile.major }}</td>
+                                <td>{{ profile.major|default:"未填写" }}</td>
                             </tr>
                             <tr>
                                 <td><strong>班级:</strong></td>
-                                <td>{{ profile.student_class }}</td>
+                                <td>{{ profile.class_name|default:"未填写" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>出生日期:</strong></td>
+                                <td>{{ profile.birth_date|default:"未填写" }}</td>
                             </tr>
                             <tr>
                                 <td><strong>联系电话:</strong></td>
-                                <td>{{ profile.phone|default:"未填写" }}</td>
+                                <td>{{ user.phone|default:"未填写" }}</td>
                             </tr>
                             <tr>
                                 <td><strong>邮箱:</strong></td>

@@ -5,7 +5,7 @@ from django.contrib import messages
 from django.views.generic import ListView, CreateView, UpdateView, DeleteView, DetailView
 from django.urls import reverse_lazy
 from django.db import transaction
-from django.http import JsonResponse
+from django.http import JsonResponse, HttpResponse
 from django.contrib.auth import get_user_model
 from django.utils import timezone
 from django.db import models
@@ -15,8 +15,76 @@ from .forms import (
     CourseForm, CourseClassForm, EnrollmentForm, StudentEnrollmentForm,
     GradeForm, AnnouncementForm
 )
+from users.forms import (
+    UserUpdateForm, StudentProfileUpdateForm, TeacherProfileUpdateForm,
+    AdminUserCreationForm, StudentProfileForm, TeacherProfileForm
+)
+from users.models import StudentProfile, TeacherProfile
 
 User = get_user_model()
+
+
+@login_required
+def user_edit_view(request, pk):
+    """编辑用户信息视图"""
+    # 只有管理员可以编辑用户信息
+    if not (request.user.user_type == 'admin' or request.user.is_superuser):
+        messages.error(request, '您没有权限编辑用户信息！')
+        return redirect('courses:user_detail', pk=pk)
+
+    user_obj = get_object_or_404(User, pk=pk)
+
+    # 获取或创建对应的档案对象
+    profile = None
+    profile_form = None
+
+    if user_obj.user_type == 'student':
+        profile, created = StudentProfile.objects.get_or_create(user=user_obj)
+        profile_form = StudentProfileUpdateForm(instance=profile)
+    elif user_obj.user_type == 'teacher':
+        profile, created = TeacherProfile.objects.get_or_create(user=user_obj)
+        profile_form = TeacherProfileUpdateForm(instance=profile)
+
+    # 用户基本信息表单
+    form = UserUpdateForm(instance=user_obj)
+
+    if request.method == 'POST':
+        form = UserUpdateForm(request.POST, instance=user_obj)
+
+        if user_obj.user_type == 'student' and profile:
+            profile_form = StudentProfileUpdateForm(request.POST, instance=profile)
+        elif user_obj.user_type == 'teacher' and profile:
+            profile_form = TeacherProfileUpdateForm(request.POST, instance=profile)
+
+        # 验证并保存表单
+        if form.is_valid():
+            try:
+                with transaction.atomic():
+                    # 保存用户基本信息
+                    form.save()
+
+                    # 保存档案信息
+                    if profile_form and profile_form.is_valid():
+                        profile_form.save()
+                    elif profile_form:
+                        messages.error(request, '档案信息有误，请检查后重试！')
+                        return render(request, 'users/admin_edit_user.html', context)
+
+                    messages.success(request, f'用户 {user_obj.username} 的信息已更新！')
+                    return redirect('courses:user_detail', pk=user_obj.pk)
+            except Exception as e:
+                messages.error(request, f'保存失败：{str(e)}')
+        else:
+            messages.error(request, '表单验证失败，请检查输入内容！')
+
+    context = {
+        'user_obj': user_obj,
+        'form': form,
+        'profile_form': profile_form,
+        'profile': profile,
+    }
+
+    return render(request, 'users/admin_edit_user.html', context)
 
 
 class DashboardView(LoginRequiredMixin):
@@ -252,19 +320,41 @@ def enroll_course_view(request, class_id):
     """学生选课"""
     if request.user.user_type != 'student':
         messages.error(request, '只有学生可以进行选课操作。')
-        return redirect('class_list')
+        return redirect('courses:class_list')
 
     course_class = get_object_or_404(CourseClass, id=class_id)
 
     # 检查是否已选过该课程
     if Enrollment.objects.filter(student=request.user, course_class=course_class).exists():
         messages.error(request, '您已经选过这门课程了。')
-        return redirect('class_detail', pk=class_id)
+        return redirect('courses:class_detail', pk=class_id)
+
+    # 检查是否选过同一课程的其他班次
+    existing_enrollments = Enrollment.objects.filter(
+        student=request.user,
+        course_class__course=course_class.course
+    ).exclude(status='rejected')
+
+    if existing_enrollments.exists():
+        course_name = course_class.course.course_name
+        messages.error(request, f'您已经选过《{course_name}》的其他班次了，不能重复选择同一门课程。')
+        return redirect('courses:class_detail', pk=class_id)
 
     # 检查名额
     if course_class.is_full:
         messages.error(request, '该课程班次已满，无法选课。')
-        return redirect('class_detail', pk=class_id)
+        return redirect('courses:class_detail', pk=class_id)
+
+    # 检查是否有待处理的申请
+    pending_enrollments = Enrollment.objects.filter(
+        student=request.user,
+        status='pending'
+    ).count()
+
+    # 限制每个学生最多同时有5个待处理申请
+    if pending_enrollments >= 5:
+        messages.error(request, f'您已有 {pending_enrollments} 个待处理的选课申请，请等待审核完成后再选课。')
+        return redirect('courses:class_detail', pk=class_id)
 
     if request.method == 'POST':
         # 确保POST数据中不会意外包含student字段
@@ -390,6 +480,84 @@ class UserDetailView(LoginRequiredMixin, IsAdminMixin, DetailView):
         return context
 
 
+
+
+class AdminUserUpdateView(LoginRequiredMixin, IsAdminMixin, UpdateView):
+    """管理员编辑用户信息"""
+    model = User
+    form_class = UserUpdateForm
+    template_name = 'users/admin_edit_user.html'
+    context_object_name = 'user_obj'
+
+    def get_context_data(self, **kwargs):
+        context = super().get_context_data(**kwargs)
+        user = self.get_object()
+
+        # 根据用户类型获取对应的档案表单
+        if user.user_type == 'student':
+            try:
+                profile = user.studentprofile
+                if 'profile_form' not in context:
+                    context['profile_form'] = StudentProfileUpdateForm(instance=profile)
+            except StudentProfile.DoesNotExist:
+                if 'profile_form' not in context:
+                    context['profile_form'] = StudentProfileUpdateForm()
+        elif user.user_type == 'teacher':
+            try:
+                profile = user.teacherprofile
+                if 'profile_form' not in context:
+                    context['profile_form'] = TeacherProfileUpdateForm(instance=profile)
+            except TeacherProfile.DoesNotExist:
+                if 'profile_form' not in context:
+                    context['profile_form'] = TeacherProfileUpdateForm()
+        else:
+            context['profile_form'] = None
+
+        return context
+
+  
+    def post(self, request, *args, **kwargs):
+        self.object = self.get_object()
+        form = self.get_form_class()(request.POST, instance=self.object)
+        profile_form = None
+
+        if self.object.user_type == 'student':
+            try:
+                profile = self.object.studentprofile
+                profile_form = StudentProfileUpdateForm(request.POST, instance=profile)
+            except StudentProfile.DoesNotExist:
+                profile_form = StudentProfileUpdateForm(request.POST)
+        elif self.object.user_type == 'teacher':
+            try:
+                profile = self.object.teacherprofile
+                profile_form = TeacherProfileUpdateForm(request.POST, instance=profile)
+            except TeacherProfile.DoesNotExist:
+                profile_form = TeacherProfileUpdateForm(request.POST)
+
+        if form.is_valid() and (profile_form is None or profile_form.is_valid()):
+            with transaction.atomic():
+                # 保存用户基本信息
+                form.save()
+
+                # 保存档案信息
+                if profile_form:
+                    if hasattr(profile_form, 'instance') and not hasattr(profile_form.instance, 'user'):
+                        profile_form.instance.user = self.object
+                    profile_form.save()
+
+                messages.success(request, '用户信息更新成功！')
+                return redirect(self.get_success_url())
+        else:
+            messages.error(request, '请修正表单中的错误。')
+
+        return self.render_to_response(self.get_context_data(
+            form=form, profile_form=profile_form
+        ))
+
+    def get_success_url(self):
+        return reverse_lazy('courses:user_detail', kwargs={'pk': self.object.pk})
+  
+
 class CourseClassDeleteView(LoginRequiredMixin, IsAdminMixin, DeleteView):
     model = CourseClass
     template_name = 'courses/class_confirm_delete.html'
@@ -482,3 +650,165 @@ class AnnouncementCreateView(LoginRequiredMixin, CreateView):
         if self.object.course_class:
             return reverse_lazy('courses:class_detail', kwargs={'pk': self.object.course_class.id})
         return reverse_lazy('courses:course_list')
+
+
+@login_required
+def admin_create_user_view(request):
+    """管理员创建用户视图"""
+    # 只有管理员可以创建用户
+    if not (request.user.user_type == 'admin' or request.user.is_superuser):
+        messages.error(request, '您没有权限创建用户！')
+        return redirect('courses:dashboard')
+
+    if request.method == 'POST':
+        user_form = AdminUserCreationForm(request.POST)
+
+        if user_form.is_valid():
+            user_type = user_form.cleaned_data['user_type']
+
+            try:
+                with transaction.atomic():
+                    user = user_form.save()
+
+                    # 根据用户类型处理档案创建
+                    if user_type == 'student':
+                        messages.info(request, f'学生用户 {user.username} 创建成功！请完善学生档案信息。')
+                        return redirect('users:create_student_profile', user_id=user.id)
+                    elif user_type == 'teacher':
+                        messages.info(request, f'教师用户 {user.username} 创建成功！请完善教师档案信息。')
+                        return redirect('users:create_teacher_profile', user_id=user.id)
+                    elif user_type == 'admin':
+                        messages.success(request, f'管理员用户 {user.username} 创建成功！')
+                        return redirect('courses:user_list')
+
+            except Exception as e:
+                messages.error(request, f'创建用户失败：{str(e)}')
+        else:
+            messages.error(request, '请修正表单中的错误！')
+    else:
+        user_form = AdminUserCreationForm()
+
+    return render(request, 'users/admin_create_user.html', {
+        'form': user_form,
+        'title': '创建新用户'
+    })
+
+
+@login_required
+def admin_delete_user_view(request, pk):
+    """管理员删除用户视图"""
+    # 只有管理员可以删除用户
+    if not (request.user.user_type == 'admin' or request.user.is_superuser):
+        messages.error(request, '您没有权限删除用户！')
+        return redirect('courses:user_list')
+
+    user_to_delete = get_object_or_404(User, pk=pk)
+
+    # 防止删除自己
+    if user_to_delete == request.user:
+        messages.error(request, '不能删除自己的账户！')
+        return redirect('courses:user_list')
+
+    # 防止删除超级用户（除非自己是超级用户）
+    if user_to_delete.is_superuser and not request.user.is_superuser:
+        messages.error(request, '您没有权限删除超级用户！')
+        return redirect('courses:user_list')
+
+    # 检查是否是最后一个管理员
+    if user_to_delete.user_type == 'admin' and not user_to_delete.is_superuser:
+        admin_count = User.objects.filter(user_type='admin', is_active=True).count()
+        if admin_count <= 1:
+            messages.error(request, '不能删除最后一个管理员账户！')
+            return redirect('courses:user_list')
+
+    # 数据依赖检查
+    blocking_info = []
+    if user_to_delete.user_type == 'student':
+        enrollment_count = user_to_delete.enrollment_set.count()
+        if enrollment_count > 0:
+            blocking_info.append(f'该学生有 {enrollment_count} 门选课记录')
+    elif user_to_delete.user_type == 'teacher':
+        class_count = user_to_delete.courseclass_set.count()
+        if class_count > 0:
+            blocking_info.append(f'该教师负责 {class_count} 个授课班级')
+
+        # 通过CourseClass计算相关课程数量
+        related_courses = Course.objects.filter(classes__teacher=user_to_delete).distinct()
+        course_count = related_courses.count()
+        if course_count > 0:
+            blocking_info.append(f'该教师关联 {course_count} 门课程')
+
+    # 如果有重要数据依赖，需要确认
+    if request.method == 'POST':
+        confirm_delete_data = request.POST.get('confirm_delete_data', 'false')
+
+        if blocking_info and confirm_delete_data != 'true':
+            messages.error(request, f'删除被阻止：{"; ".join(blocking_info)}。请确认您了解删除的后果。')
+            return redirect('courses:user_list')
+
+        username = user_to_delete.username
+        try:
+            with transaction.atomic():
+                # 记录删除操作
+                messages.info(request, f'正在删除用户 {username} 及其所有相关数据...')
+
+                # 删除选课记录（如果有）
+                if user_to_delete.user_type == 'student':
+                    enrollment_count = user_to_delete.enrollment_set.count()
+                    if enrollment_count > 0:
+                        user_to_delete.enrollment_set.all().delete()
+                        messages.info(request, f'已删除 {enrollment_count} 条选课记录')
+
+                # 删除授课班级（如果有）
+                if user_to_delete.user_type == 'teacher':
+                    class_count = user_to_delete.courseclass_set.count()
+                    if class_count > 0:
+                        # 不能直接删除有学生的班级，需要先取消关联
+                        classes_with_students = user_to_delete.courseclass_set.filter(current_students__gt=0)
+                        if classes_with_students.exists():
+                            for course_class in classes_with_students:
+                                # 将班级的教师设置为空，或者重新分配
+                                course_class.teacher = None
+                                course_class.save()
+                            messages.warning(request, f'已将 {classes_with_students.count()} 个有学生的班级的教师字段清空')
+
+                        # 删除没有学生的班级
+                        empty_classes = user_to_delete.courseclass_set.filter(current_students=0)
+                        empty_count = empty_classes.count()
+                        if empty_count > 0:
+                            empty_classes.delete()
+                            messages.info(request, f'已删除 {empty_count} 个空的授课班级')
+
+                # 删除相关的档案信息
+                if hasattr(user_to_delete, 'studentprofile'):
+                    user_to_delete.studentprofile.delete()
+                    messages.info(request, '已删除学生档案')
+                elif hasattr(user_to_delete, 'teacherprofile'):
+                    user_to_delete.teacherprofile.delete()
+                    messages.info(request, '已删除教师档案')
+
+                # 删除用户
+                user_to_delete.delete()
+
+                messages.success(request, f'用户 {username} 已成功删除！')
+                return redirect('courses:user_list')
+
+        except Exception as e:
+            messages.error(request, f'删除用户失败：{str(e)}')
+            return redirect('courses:user_list')
+
+    # 计算相关数据统计
+    stats = {}
+    if user_to_delete.user_type == 'student':
+        stats['total_enrollments'] = user_to_delete.enrollment_set.count()
+        stats['approved_enrollments'] = user_to_delete.enrollment_set.filter(status='approved').count()
+    elif user_to_delete.user_type == 'teacher':
+        stats['total_classes'] = user_to_delete.courseclass_set.count()
+        # 通过CourseClass计算相关课程数量
+        related_courses = Course.objects.filter(classes__teacher=user_to_delete).distinct()
+        stats['managed_courses'] = related_courses.count()
+
+    return render(request, 'users/admin_delete_user.html', {
+        'user_to_delete': user_to_delete,
+        'stats': stats
+    })
