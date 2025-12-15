@@ -1,0 +1,425 @@
+{% extends 'base.html' %}
+
+{% block title %}删除课程 - {{ object.course_name }} - 学生选课系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8 col-lg-9">
+        <div class="card">
+            <div class="card-header bg-danger text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    确认删除课程
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- 严重警告 -->
+                <div class="alert alert-danger" role="alert">
+                    <h5 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        删除操作不可恢复！
+                    </h5>
+                    <p class="mb-0">
+                        您即将删除课程 <strong>{{ object.course_code }} - {{ object.course_name }}</strong>。
+                        此操作将同时删除与该课程相关的所有数据！
+                    </p>
+                    <ul class="mb-0 mt-2">
+                        <li>所有课程班次</li>
+                        <li>所有学生的选课记录</li>
+                        <li>所有成绩记录</li>
+                        <li>所有相关公告</li>
+                    </ul>
+                </div>
+
+                <!-- 课程基本信息 -->
+                <div class="card mb-4">
+                    <div class="card-header bg-light">
+                        <h6 class="mb-0">
+                            <i class="fas fa-info-circle"></i>
+                            待删除课程信息
+                        </h6>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <td class="text-muted" style="width: 120px;"><strong>课程代码:</strong></td>
+                                        <td>{{ object.course_code }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>课程名称:</strong></td>
+                                        <td>{{ object.course_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>学分:</strong></td>
+                                        <td>{{ object.credits }} 学分</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>学时:</strong></td>
+                                        <td>{{ object.hours }} 学时</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="table table-sm table-borderless">
+                                    <tr>
+                                        <td class="text-muted" style="width: 120px;"><strong>学年:</strong></td>
+                                        <td>{{ object.academic_year|default:"未设定" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>学期:</strong></td>
+                                        <td>{{ object.semester|default:"未设定" }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>开设班次:</strong></td>
+                                        <td>
+                                            <span class="badge bg-info">{{ class_count }} 个</span>
+                                        </td>
+                                    </tr>
+                                    <tr>
+                                        <td class="text-muted"><strong>已选学生:</strong></td>
+                                        <td>
+                                            <span class="badge {% if total_enrolled > 0 %}bg-warning{% else %}bg-secondary{% endif %}">{{ total_enrolled }} 人</span>
+                                        </td>
+                                    </tr>
+                                    {% if total_capacity > 0 %}
+                                    <tr>
+                                        <td class="text-muted"><strong>选课率:</strong></td>
+                                        <td>
+                                            <div class="progress" style="height: 20px; width: 100px;">
+                                                <div class="progress-bar {% if enrollment_rate > 80 %}bg-danger{% elif enrollment_rate > 60 %}bg-warning{% else %}bg-success{% endif %}"
+                                                     role="progressbar"
+                                                     style="width: {{ enrollment_rate }}%"
+                                                     aria-valuenow="{{ enrollment_rate }}"
+                                                     aria-valuemin="0"
+                                                     aria-valuemax="100">
+                                                    {{ enrollment_rate }}%
+                                                </div>
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endif %}
+                                </table>
+                            </div>
+                        </div>
+                        {% if object.description %}
+                        <div class="mt-3">
+                            <p class="mb-1"><strong>课程描述:</strong></p>
+                            <div class="bg-light p-2 rounded">
+                                <small>{{ object.description|linebreaks }}</small>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+
+                <!-- 风险评估 -->
+                <div class="alert alert-{{ risk_color }} d-flex align-items-center" role="alert">
+                    <i class="fas fa-exclamation-triangle fa-2x me-3"></i>
+                    <div>
+                        <h6 class="alert-heading mb-1">风险评估</h6>
+                        <p class="mb-0">
+                            <strong>{{ risk_message }}</strong>
+                            <br>
+                            <small>
+                                {% if risk_level == 'high' %}
+                                此删除操作将影响大量数据，建议先备份重要信息
+                                {% elif risk_level == 'medium' %}
+                                请仔细检查影响范围，确保没有遗漏重要数据
+                                {% else %}
+                                删除影响相对较小，但仍需谨慎操作
+                                {% endif %}
+                            </small>
+                        </p>
+                    </div>
+                </div>
+
+                <!-- 影响范围统计 -->
+                {% if class_count > 0 or total_enrolled > 0 %}
+                <div class="alert alert-warning" role="alert">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-chart-bar"></i>
+                        影响范围统计
+                    </h6>
+                    <div class="row">
+                        <div class="col-md-3 col-6">
+                            <div class="text-center">
+                                <i class="fas fa-chalkboard fa-2x text-warning mb-2"></i>
+                                <div>
+                                    <strong>{{ class_count }}</strong>
+                                    <small class="d-block text-muted">课程班次</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="text-center">
+                                <i class="fas fa-users fa-2x text-info mb-2"></i>
+                                <div>
+                                    <strong>{{ total_enrolled }}</strong>
+                                    <small class="d-block text-muted">已选学生</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% if total_capacity > 0 %}
+                        <div class="col-md-3 col-6">
+                            <div class="text-center">
+                                <i class="fas fa-user-graduate fa-2x text-primary mb-2"></i>
+                                <div>
+                                    <strong>{{ total_capacity }}</strong>
+                                    <small class="d-block text-muted">总容量</small>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-3 col-6">
+                            <div class="text-center">
+                                <i class="fas fa-percentage fa-2x {% if enrollment_rate > 80 %}text-danger{% elif enrollment_rate > 60 %}text-warning{% else %}text-success{% endif %} mb-2"></i>
+                                <div>
+                                    <strong>{{ enrollment_rate }}%</strong>
+                                    <small class="d-block text-muted">选课率</small>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    {% if total_enrolled > 0 %}
+                    <hr class="my-2">
+                    <div class="row">
+                        <div class="col-12">
+                            <p class="mb-2 small">
+                                <strong>重要提示：</strong>删除后，以下数据将被永久删除且无法恢复：
+                            </p>
+                            <div class="row text-center">
+                                <div class="col-md-4 col-12 mb-2">
+                                    <i class="fas fa-user-times text-danger"></i>
+                                    <span class="small">{{ total_enrolled }} 名学生选课记录</span>
+                                </div>
+                                {% if has_active_enrollments %}
+                                <div class="col-md-4 col-12 mb-2">
+                                    <i class="fas fa-graduation-cap text-danger"></i>
+                                    <span class="small">所有相关成绩记录</span>
+                                </div>
+                                {% endif %}
+                                <div class="col-md-4 col-12 mb-2">
+                                    <i class="fas fa-bullhorn text-danger"></i>
+                                    <span class="small">所有相关公告</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+
+                <!-- 确认表单 -->
+                <form method="post" id="deleteForm" class="transition-danger">
+                    {% csrf_token %}
+
+                    <!-- 确认复选框 -->
+                    <div class="alert alert-warning">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="confirmDelete" required>
+                            <label class="form-check-label" for="confirmDelete">
+                                我已确认要删除课程 <strong>"{{ object.course_name }}"</strong>，
+                                并理解此操作不可恢复
+                            </label>
+                        </div>
+                    </div>
+
+                    <!-- 高风险操作额外确认 -->
+                    {% if risk_level == 'high' or class_count > 15 or total_enrolled > 100 %}
+                    <div class="alert alert-danger">
+                        <h6 class="alert-heading">
+                            <i class="fas fa-shield-alt"></i>
+                            高风险操作额外确认
+                        </h6>
+                        <p class="mb-2">
+                            此删除操作将影响大量数据，需要额外确认：
+                        </p>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="high_risk_confirm" id="highRiskConfirm" required>
+                            <label class="form-check-label" for="highRiskConfirm">
+                                我是管理员，确认要进行此高风险删除操作，并已做好数据备份
+                            </label>
+                        </div>
+                        <small class="text-muted">
+                            建议在删除前：<br>
+                            • 导出相关学生成绩数据<br>
+                            • 保存课程相关文档<br>
+                            • 通知相关教师和学生
+                        </small>
+                    </div>
+                    {% endif %}
+
+                    <!-- 操作按钮 -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'courses:course_detail' object.id %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> 返回课程详情
+                        </a>
+                        <div>
+                            <button type="button" class="btn btn-outline-secondary me-2" onclick="window.history.back()">
+                                <i class="fas fa-times"></i> 取消
+                            </button>
+                            <button type="submit" class="btn btn-danger" id="confirmBtn" disabled>
+                                <i class="fas fa-trash"></i> 确认删除
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- 侧边栏提示 -->
+    <div class="col-md-4 col-lg-3">
+        <div class="card">
+            <div class="card-header bg-warning text-dark">
+                <h5 class="mb-0">
+                    <i class="fas fa-lightbulb"></i>
+                    操作前请注意
+                </h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info mb-3">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-info-circle"></i>
+                        替代方案
+                    </h6>
+                    <p class="mb-2 small">
+                        如果只是想停止选课，可以考虑：
+                    </p>
+                    <ul class="small mb-0">
+                        <li>将课程状态设为不可选</li>
+                        <li>删除所有课程班次</li>
+                        <li>修改课程信息标注已停开</li>
+                    </ul>
+                </div>
+
+                <div class="alert alert-danger mb-0">
+                    <h6 class="alert-heading">
+                        <i class="fas fa-exclamation-triangle"></i>
+                        删除后影响
+                    </h6>
+                    <ul class="small mb-0">
+                        <li>无法恢复课程数据</li>
+                        <li>影响学生选课记录</li>
+                        <li>可能影响学业统计</li>
+                        <li>教师失去课程访问权限</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const confirmCheckbox = document.getElementById('confirmDelete');
+    const confirmButton = document.getElementById('confirmBtn');
+    const deleteForm = document.getElementById('deleteForm');
+
+    // 复选框控制按钮状态
+    confirmCheckbox.addEventListener('change', function() {
+        confirmButton.disabled = !this.checked;
+        if (this.checked) {
+            confirmButton.classList.remove('btn-secondary');
+            confirmButton.classList.add('btn-danger', 'animate-pulse');
+        } else {
+            confirmButton.classList.remove('btn-danger', 'animate-pulse');
+            confirmButton.classList.add('btn-secondary');
+        }
+    });
+
+    // 表单提交确认
+    deleteForm.addEventListener('submit', function(e) {
+        const courseName = '{{ object.course_name }}';
+        const courseCode = '{{ object.course_code }}';
+        const classCount = {{ class_count|default:0 }};
+        const totalEnrolled = {{ total_enrolled|default:0 }};
+
+        let confirmMessage = `最后确认：\n\n您确定要删除课程 "${courseCode} - ${courseName}" 吗？\n\n`;
+
+        if (classCount > 0 || totalEnrolled > 0) {
+            confirmMessage += `影响范围：\n- ${classCount} 个课程班次\n- ${totalEnrolled} 名学生的选课记录\n\n`;
+        }
+
+        confirmMessage += `此操作将永久删除该课程及所有相关数据，且无法恢复！\n\n点击"确定"继续删除，点击"取消"返回。`;
+
+        const finalConfirm = confirm(confirmMessage);
+
+        if (!finalConfirm) {
+            e.preventDefault();
+            return;
+        }
+
+        // 禁用按钮并显示加载状态
+        confirmButton.disabled = true;
+        confirmButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 删除中...';
+
+        // 禁用取消按钮
+        const cancelButton = deleteForm.querySelector('button[type="button"]');
+        if (cancelButton) {
+            cancelButton.disabled = true;
+        }
+    });
+
+    // 页面离开提醒
+    let formChanged = false;
+    document.addEventListener('beforeunload', function(e) {
+        if (formChanged && !confirmButton.disabled) {
+            e.preventDefault();
+            e.returnValue = '您有未完成的删除操作，确定要离开吗？';
+            return e.returnValue;
+        }
+    });
+
+    // 监听复选框变化
+    confirmCheckbox.addEventListener('change', function() {
+        formChanged = this.checked;
+    });
+
+    // 添加键盘快捷键支持
+    document.addEventListener('keydown', function(e) {
+        // ESC键取消操作
+        if (e.key === 'Escape') {
+            window.history.back();
+        }
+        // Ctrl+Enter快速确认（仅在复选框选中时）
+        if (e.ctrlKey && e.key === 'Enter' && !confirmButton.disabled) {
+            deleteForm.dispatchEvent(new Event('submit'));
+        }
+    });
+
+    // 添加视觉反馈
+    confirmCheckbox.addEventListener('change', function() {
+        if (this.checked) {
+            deleteForm.classList.add('border-danger');
+            setTimeout(() => {
+                deleteForm.classList.add('shadow-lg');
+            }, 100);
+        } else {
+            deleteForm.classList.remove('border-danger', 'shadow-lg');
+        }
+    });
+});
+
+// 添加CSS动画样式
+const style = document.createElement('style');
+style.textContent = `
+    @keyframes pulse {
+        0% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0.7); }
+        70% { box-shadow: 0 0 0 10px rgba(220, 53, 69, 0); }
+        100% { box-shadow: 0 0 0 0 rgba(220, 53, 69, 0); }
+    }
+    .animate-pulse {
+        animation: pulse 2s infinite;
+    }
+    .transition-danger {
+        transition: all 0.3s ease;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}
+{% endblock %}

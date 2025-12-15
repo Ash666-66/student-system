@@ -1,0 +1,204 @@
+{% extends 'base.html' %}
+
+{% block title %}选课 - {{ course_class.course.course_name }} - 学生选课系统{% endblock %}
+
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-md-8">
+        <div class="card">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-plus-circle"></i> 选课申请
+                </h4>
+            </div>
+            <div class="card-body">
+                <!-- 课程信息 -->
+                <div class="alert alert-info mb-4">
+                    <h5><i class="fas fa-info-circle"></i> 课程信息</h5>
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>课程名称:</strong> {{ course_class.course.course_name }}</p>
+                            <p><strong>课程代码:</strong> {{ course_class.course.course_code }}</p>
+                            <p><strong>班次代码:</strong> {{ course_class.class_code }}</p>
+                            <p><strong>授课教师:</strong> {{ course_class.teacher.username }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>学分:</strong> {{ course_class.course.credits }}</p>
+                            <p><strong>课时:</strong> {{ course_class.course.hours }}</p>
+                            <p><strong>上课地点:</strong> {{ course_class.classroom }}</p>
+                            <p><strong>上课时间:</strong> {{ course_class.schedule|default:"待定" }}</p>
+                        </div>
+                    </div>
+                    <div class="row mt-2">
+                        <div class="col-md-6">
+                            <p><strong>已选人数:</strong> {{ course_class.current_students }} / {{ course_class.max_students }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            {% if course_class.is_full %}
+                                <span class="badge bg-danger">已满员</span>
+                            {% else %}
+                                <span class="badge bg-success">可选</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 选课表单 -->
+                <form method="post">
+                    {% csrf_token %}
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="{{ form.course_class.id_for_label }}" class="form-label">选择课程班次</label>
+                            {{ form.course_class }}
+                            {% if form.course_class.errors %}
+                                <div class="text-danger">{{ form.course_class.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">请确认您要选择的课程班次</div>
+                        </div>
+                    </div>
+
+                    {% if form.reason %}
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label for="{{ form.reason.id_for_label }}" class="form-label">选课说明</label>
+                            {{ form.reason }}
+                            {% if form.reason.errors %}
+                                <div class="text-danger">{{ form.reason.errors }}</div>
+                            {% endif %}
+                            <div class="form-text">请简要说明您选择该课程的原因（可选）</div>
+                        </div>
+                    </div>
+                    {% endif %}
+
+                    <!-- 选课须知 -->
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle"></i> 选课须知</h6>
+                        <ul class="mb-0">
+                            <li>提交选课申请后，需要等待授课教师或管理员审核</li>
+                            <li>审核通过后将正式选入该课程</li>
+                            <li>如需退课，请在选课记录页面申请</li>
+                            <li>请确保所选课程时间不与已选课程冲突</li>
+                            <li>选课成功后，请按时参加课程学习</li>
+                        </ul>
+                    </div>
+
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'courses:class_detail' course_class.id %}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left"></i> 返回课程详情
+                        </a>
+                        <div>
+                            <a href="{% url 'courses:class_list' %}" class="btn btn-outline-secondary me-2">
+                                <i class="fas fa-search"></i> 继续浏览
+                            </a>
+                            <button type="submit" class="btn btn-success" {% if course_class.is_full %}disabled{% endif %}>
+                                <i class="fas fa-paper-plane"></i>
+                                {% if course_class.is_full %}
+                                    课程已满
+                                {% else %}
+                                    提交选课申请
+                                {% endif %}
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <!-- 相关课程推荐 -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">相关课程推荐</h5>
+            </div>
+            <div class="card-body">
+                <p class="text-muted small">基于您选择的课程推荐以下相关课程：</p>
+                <div id="relatedCourses">
+                    <!-- 可以通过AJAX加载相关课程 -->
+                    <div class="text-center py-3">
+                        <div class="spinner-border spinner-border-sm" role="status">
+                            <span class="visually-hidden">加载中...</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 学习进度统计 -->
+        {% if request.user.user_type == 'student' %}
+        <div class="card mt-3">
+            <div class="card-header bg-info text-white">
+                <h5 class="mb-0">学习进度</h5>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>已选课程</span>
+                        <span class="badge bg-primary">0 门</span>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>已获得学分</span>
+                        <span class="badge bg-success">0 学分</span>
+                    </div>
+                </div>
+                <div class="mb-2">
+                    <div class="d-flex justify-content-between">
+                        <span>待审核课程</span>
+                        <span class="badge bg-warning">0 门</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 为表单字段添加样式
+    const formFields = document.querySelectorAll('input, select, textarea');
+    formFields.forEach(field => {
+        field.classList.add('form-control');
+    });
+
+    // 加载相关课程推荐（模拟）
+    setTimeout(() => {
+        const relatedCourses = document.getElementById('relatedCourses');
+        relatedCourses.innerHTML = `
+            <div class="list-group list-group-flush">
+                <a href="#" class="list-group-item list-group-item-action">
+                    <h6 class="mb-1">高等数学</h6>
+                    <p class="mb-1 text-muted small">数学基础课程</p>
+                    <small class="text-muted">4学分 | 周二/周四 8:00</small>
+                </a>
+                <a href="#" class="list-group-item list-group-item-action">
+                    <h6 class="mb-1">线性代数</h6>
+                    <p class="mb-1 text-muted small">数学基础课程</p>
+                    <small class="text-muted">3学分 | 周一/周三 10:00</small>
+                </a>
+            </div>
+        `;
+    }, 1000);
+
+    // 添加表单提交确认
+    const form = document.querySelector('form');
+    form.addEventListener('submit', function(e) {
+        const submitBtn = form.querySelector('button[type="submit"]');
+        if (!submitBtn.disabled) {
+            const confirmSubmit = confirm('确定要提交选课申请吗？');
+            if (!confirmSubmit) {
+                e.preventDefault();
+            } else {
+                submitBtn.disabled = true;
+                submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 提交中...';
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
