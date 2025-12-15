@@ -25,19 +25,31 @@
                         <table class="table table-borderless">
                             <tr>
                                 <td><strong>教师编号:</strong></td>
-                                <td>{{ profile.teacher_number }}</td>
+                                <td>{{ profile.teacher_id }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>真实姓名:</strong></td>
+                                <td>{{ profile.name|default:"未填写" }}</td>
+                            </tr>
+                            <tr>
+                                <td><strong>性别:</strong></td>
+                                <td>
+                                    {% if profile.gender == 'M' %}男
+                                    {% elif profile.gender == 'F' %}女
+                                    {% else %}未填写{% endif %}
+                                </td>
                             </tr>
                             <tr>
                                 <td><strong>院系:</strong></td>
-                                <td>{{ profile.department }}</td>
+                                <td>{{ profile.department|default:"未填写" }}</td>
                             </tr>
                             <tr>
                                 <td><strong>职称:</strong></td>
-                                <td>{{ profile.title }}</td>
+                                <td>{{ profile.title|default:"未填写" }}</td>
                             </tr>
                             <tr>
                                 <td><strong>联系电话:</strong></td>
-                                <td>{{ profile.phone|default:"未填写" }}</td>
+                                <td>{{ user.phone|default:"未填写" }}</td>
                             </tr>
                             <tr>
                                 <td><strong>邮箱:</strong></td>

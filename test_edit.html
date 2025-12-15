@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>编辑功能测试</title>
+</head>
+<body>
+    <h1>用户编辑功能测试</h1>
+
+    <p>测试步骤：</p>
+    <ol>
+        <li>启动服务器: python manage.py runserver</li>
+        <li>访问登录页面: <a href="http://127.0.0.1:8000/users/login/">http://127.0.0.1:8000/users/login/</a></li>
+        <li>使用管理员账户登录</li>
+        <li>访问用户列表: <a href="http://127.0.0.1:8000/courses/users/">http://127.0.0.1:8000/courses/users/</a></li>
+        <li>点击任意用户进入详情页面</li>
+        <li>点击"编辑用户"按钮测试编辑功能</li>
+    </ol>
+
+    <h2>预期结果：</h2>
+    <ul>
+        <li>编辑按钮应该能正常跳转到编辑页面</li>
+        <li>编辑页面应该显示用户的当前信息</li>
+        <li>修改信息后提交应该能正常保存并跳转回用户详情页</li>
+    </ul>
+
+    <h2>常见问题排查：</h2>
+    <ul>
+        <li>如果出现404错误：检查URL路由配置</li>
+        <li>如果出现403错误：检查用户权限</li>
+        <li>如果表单不显示：检查视图和模板配置</li>
+    </ul>
+
+    <p><a href="http://127.0.0.1:8000/courses/users/4/edit/">直接测试用户4的编辑页面</a> (需要登录)</p>
+</body>
+</html>

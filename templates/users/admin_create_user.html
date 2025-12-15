@@ -1,0 +1,243 @@
+{% extends 'base.html' %}
+
+{% block title %}创建新用户 - 学生选课系统{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+    <h1 class="h2">
+        <i class="fas fa-user-plus"></i> 创建新用户
+    </h1>
+    <div class="btn-toolbar mb-2 mb-md-0">
+        <div class="btn-group me-2">
+            <a href="{% url 'courses:user_list' %}" class="btn btn-sm btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> 返回用户列表
+            </a>
+        </div>
+    </div>
+</div>
+
+<div class="row justify-content-center">
+    <div class="col-md-10">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">
+                    <i class="fas fa-user-plus"></i> 创建新用户账户
+                </h4>
+            </div>
+            <div class="card-body">
+                <form method="post" id="createUserForm">
+                    {% csrf_token %}
+
+                    <!-- 基本信息 -->
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3">
+                                <i class="fas fa-id-card"></i> 基本信息
+                            </h5>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.username.id_for_label }}" class="form-label">用户名:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user"></i></span>
+                                    <input type="text" class="form-control" id="{{ form.username.id_for_label }}"
+                                           name="{{ form.username.name }}" placeholder="请输入用户名" required>
+                                </div>
+                                {% if form.username.errors %}
+                                    <div class="form-text text-danger">{{ form.username.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.email.id_for_label }}" class="form-label">邮箱:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-envelope"></i></span>
+                                    <input type="email" class="form-control" id="{{ form.email.id_for_label }}"
+                                           name="{{ form.email.name }}" placeholder="请输入邮箱" required>
+                                </div>
+                                {% if form.email.errors %}
+                                    <div class="form-text text-danger">{{ form.email.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.first_name.id_for_label }}" class="form-label">姓:</label>
+                                <input type="text" class="form-control" id="{{ form.first_name.id_for_label }}"
+                                       name="{{ form.first_name.name }}" placeholder="请输入姓">
+                                {% if form.first_name.errors %}
+                                    <div class="form-text text-danger">{{ form.first_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.last_name.id_for_label }}" class="form-label">名:</label>
+                                <input type="text" class="form-control" id="{{ form.last_name.id_for_label }}"
+                                       name="{{ form.last_name.name }}" placeholder="请输入名">
+                                {% if form.last_name.errors %}
+                                    <div class="form-text text-danger">{{ form.last_name.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.phone.id_for_label }}" class="form-label">手机号:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-phone"></i></span>
+                                    <input type="tel" class="form-control" id="{{ form.phone.id_for_label }}"
+                                           name="{{ form.phone.name }}" placeholder="请输入手机号" maxlength="11">
+                                </div>
+                                {% if form.phone.errors %}
+                                    <div class="form-text text-danger">{{ form.phone.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.user_type.id_for_label }}" class="form-label">用户类型:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-user-tag"></i></span>
+                                    <select class="form-select" id="{{ form.user_type.id_for_label }}" name="{{ form.user_type.name }}" required>
+                                        <option value="">请选择用户类型</option>
+                                        <option value="student">学生</option>
+                                        <option value="teacher">教师</option>
+                                        <option value="admin">管理员</option>
+                                    </select>
+                                </div>
+                                {% if form.user_type.errors %}
+                                    <div class="form-text text-danger">{{ form.user_type.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 密码设置 -->
+                    <hr>
+                    <div class="row mb-4">
+                        <div class="col-12">
+                            <h5 class="mb-3">
+                                <i class="fas fa-lock"></i> 密码设置
+                            </h5>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.password1.id_for_label }}" class="form-label">密码:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                    <input type="password" class="form-control" id="{{ form.password1.id_for_label }}"
+                                           name="{{ form.password1.name }}" placeholder="请输入密码" required>
+                                </div>
+                                {% if form.password1.errors %}
+                                    <div class="form-text text-danger">{{ form.password1.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="mb-3">
+                                <label for="{{ form.password2.id_for_label }}" class="form-label">确认密码:</label>
+                                <div class="input-group">
+                                    <span class="input-group-text"><i class="fas fa-key"></i></span>
+                                    <input type="password" class="form-control" id="{{ form.password2.id_for_label }}"
+                                           name="{{ form.password2.name }}" placeholder="请再次输入密码" required>
+                                </div>
+                                {% if form.password2.errors %}
+                                    <div class="form-text text-danger">{{ form.password2.errors.0 }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- 操作按钮 -->
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <a href="{% url 'courses:user_list' %}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> 取消
+                            </a>
+                        </div>
+                        <div>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-user-plus"></i> 创建用户
+                            </button>
+                            <button type="reset" class="btn btn-outline-primary ms-2">
+                                <i class="fas fa-undo"></i> 重置
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const createUserForm = document.getElementById('createUserForm');
+
+    createUserForm.addEventListener('submit', function(e) {
+        // 手机号验证
+        const phoneInput = document.querySelector('input[name="phone"]');
+        if (phoneInput && phoneInput.value) {
+            const phoneRegex = /^1[3-9]\d{9}$/;
+            if (!phoneRegex.test(phoneInput.value)) {
+                e.preventDefault();
+                alert('请输入正确的手机号码格式！');
+                phoneInput.focus();
+                return false;
+            }
+        }
+
+        // 邮箱验证
+        const emailInput = document.querySelector('input[name="email"]');
+        if (emailInput && emailInput.value) {
+            const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            if (!emailRegex.test(emailInput.value)) {
+                e.preventDefault();
+                alert('请输入正确的邮箱格式！');
+                emailInput.focus();
+                return false;
+            }
+        }
+
+        // 密码验证
+        const password1Input = document.querySelector('input[name="password1"]');
+        const password2Input = document.querySelector('input[name="password2"]');
+
+        if (password1Input.value.length < 8) {
+            e.preventDefault();
+            alert('密码长度至少为8位！');
+            password1Input.focus();
+            return false;
+        }
+
+        if (password1Input.value !== password2Input.value) {
+            e.preventDefault();
+            alert('两次输入的密码不一致！');
+            password2Input.focus();
+            return false;
+        }
+
+        // 管理员创建确认
+        const userTypeSelect = document.querySelector('select[name="user_type"]');
+        if (userTypeSelect.value === 'admin') {
+            if (!confirm('您正在创建管理员账户，该用户将拥有系统管理权限。确定要继续吗？')) {
+                e.preventDefault();
+                return false;
+            }
+        }
+    });
+
+    // 重置按钮功能
+    const resetBtn = createUserForm.querySelector('button[type="reset"]');
+    resetBtn.addEventListener('click', function() {
+        if (confirm('确定要重置所有表单字段吗？')) {
+            createUserForm.reset();
+        }
+    });
+});
+</script>
+{% endblock %}
